@@ -1,0 +1,419 @@
+{% extends "layoutAdministrador.html" %}
+
+{% block content %}
+{% import "_macrosJuan.html" as macro %}
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stilo.css') }}">
+    <div class="container mt-5">
+        <h1 class="text-center header">PROVEEDORES</h1>
+
+        <form id="proveedorForm" method="POST">
+            {{ form.hidden_tag() }}  <!-- Token CSRF aquí -->
+            <div class="row">
+                <!-- Columna izquierda -->
+                <div class="col-md-4">
+                    <div class="mb-5"> {{ macro.input_field("text", "nombre", "Nombre" ) }} </div>
+                    <div class="mb-5"> {{ macro.input_field("text", "direccion", "Dirección") }} </div>
+                </div>
+                
+                <!-- Columna central -->
+                <div class="col-md-4">
+                    <div class="mb-5"> {{ macro.input_field("tel", "telefono", "Teléfono") }} </div>
+                    <div class="mb-5"> {{ macro.input_field("email", "correo", "Correo") }} </div>
+                </div>
+                
+                <!-- Columna derecha -->
+                <div class="col-md-4">
+                    <div class="mb-5"> {{ macro.input_field("text", "vendedor", "Vendedor", ["Principal", "Secundario"]) }} </div>
+                    <div class="mb-5"> {{ macro.input_field("text", "empresa", "Empresa") }} </div>
+                </div>
+
+                <!-- Dentro de tu formulario, después de los campos del proveedor -->
+<div class="row mt-4">
+    <div class="col-12">
+        <h4>Productos del Proveedor</h4>
+        <div id="productos-container">
+            {% for producto in form.productos %}
+            <div class="producto-form mb-3 p-3 border rounded">
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ macro.input_field("text", producto.nombre.name, "Nombre del Producto") }}
+                    </div>
+                    <div class="col-md-5">
+                        {{ macro.input_field("number", producto.precio.name, "Precio", step="0.01") }}
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger btn-remove-producto" {% if loop.first %}disabled{% endif %}>X</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" id="btn-add-producto" class="btn btn-secondary mt-2">Agregar otro producto</button>
+    </div>
+</div>
+
+            <!-- Botones -->
+            <div class="text-center mt-3">
+                <button type="button" class="buttonAG" onclick="confirmarAccion('submit_agregar')">Agregar</button>
+                <button type="button" class="buttonMo" onclick="confirmarAccion('submit_modificar')">Modificar</button>
+            </div>
+
+            <input type="hidden" id="actionType" name="actionType">
+            <input type="hidden" id="codigoUsuario" name="codigoUsuario">
+
+<!-- Agregamos un campo oculto para el ID -->
+<input type="hidden" id="idProveedor" name="idProveedor">
+        </form>
+    </div>
+
+    <!-- Script para SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function confirmarAccion(action) {
+            Swal.fire({
+                title: "Ingrese el código de usuario",
+                input: "text",
+                inputPlaceholder: "Código de usuario",
+                showCancelButton: true,
+                confirmButtonText: "Confirmar",
+                cancelButtonText: "Cancelar",
+                inputValidator: (value) => {
+                    if (!value) {
+                        return "Debe ingresar el código de usuario";
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById("codigoUsuario").value = result.value;
+                    document.getElementById("actionType").value = action;
+                    
+                    // Agregar un input oculto con el nombre del botón para identificar la acción
+                    let inputAccion = document.createElement("input");
+                    inputAccion.type = "hidden";
+                    inputAccion.name = action;
+                    inputAccion.value = "1";
+                    document.getElementById("proveedorForm").appendChild(inputAccion);
+
+                    document.getElementById("proveedorForm").submit();
+                }
+            });
+        }
+    </script>
+
+
+   <!-- Cards de proveedores -->
+<div class="container mt-4">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+        {% for proveedor in proveedores %}
+        <div class="col">
+            <div class="card h-100 proveedor-card" 
+                 onclick="seleccionarProveedor(this)"
+                 data-id="{{ proveedor.idProveedor }}"
+                 data-nombre="{{ proveedor.nombreProveedor }}"
+                 data-telefono="{{ proveedor.telefono }}"
+                 data-empresa="{{ proveedor.empresa }}"
+                 data-direccion="{{ proveedor.direccion }}"
+                 data-correo="{{ proveedor.correo }}"
+                 data-vendedor="{{ proveedor.tipoVendedor }}">
+                 <div class="card-header proveedor-card-header" style="background-color: #B67308;">
+                    <h5 class="card-title mb-0">{{ proveedor.empresa }}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        <strong>Contacto:</strong> {{ proveedor.nombreProveedor }}<br>
+                        <strong>Teléfono:</strong> {{ proveedor.telefono }}<br>
+                        <strong>Dirección:</strong> {{ proveedor.direccion }}<br>
+                        <strong>Tipo:</strong> {{ proveedor.tipoVendedor }}
+                    </p>
+                </div>
+                <div class="card-footer bg-light">
+                    <small class="text-muted">ID: {{ proveedor.idProveedor }}</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // Función principal para seleccionar proveedor
+    function seleccionarProveedor(card) {
+        // Remover selección previa (si existe)
+        document.querySelectorAll('.proveedor-card.selected').forEach(selectedCard => {
+            selectedCard.classList.remove('selected');
+        });
+        
+        // Marcar card como seleccionada
+        card.classList.add('selected');
+        
+        // Obtener valores de los data attributes
+        const idProveedor = card.dataset.id;
+        const nombre = card.dataset.nombre;
+        const telefono = card.dataset.telefono;
+        const empresa = card.dataset.empresa;
+        const direccion = card.dataset.direccion;
+        const correo = card.dataset.correo;
+        const vendedor = card.dataset.vendedor;
+        
+        // Actualizar campos del formulario
+        document.getElementById("idProveedor").value = idProveedor;
+        document.getElementById("nombre").value = nombre;
+        document.getElementById("telefono").value = telefono;
+        document.getElementById("empresa").value = empresa;
+        document.getElementById("direccion").value = direccion;
+        document.getElementById("correo").value = correo;
+        
+        // Manejo de select para vendedor
+        let vendedorSelect = document.getElementById("vendedor");
+        for (let i = 0; i < vendedorSelect.options.length; i++) {
+            if (vendedorSelect.options[i].value === vendedor) {
+                vendedorSelect.selectedIndex = i;
+                break;
+            }
+        }
+        
+        // Obtener productos del proveedor
+        obtenerProductosProveedor(idProveedor);
+        
+        // Feedback visual
+        Swal.fire({
+            title: 'Proveedor seleccionado',
+            text: `Has seleccionado a ${empresa}`,
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false
+        });
+    }
+
+    // Función para obtener productos del proveedor via AJAX
+    function obtenerProductosProveedor(idProveedor) {
+        fetch(`/obtener_productos_proveedor/${idProveedor}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al obtener productos');
+                }
+                return response.json();
+            })
+            .then(productos => {
+                const productosContainer = document.getElementById('productos-container');
+                productosContainer.innerHTML = ''; // Limpiar productos existentes
+                
+                if (productos.length === 0) {
+                    agregarFormularioProductoVacio(0);
+                } else {
+                    productos.forEach((producto, index) => {
+                        agregarFormularioProducto(producto, index);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'No se pudieron cargar los productos del proveedor',
+                    icon: 'error'
+                });
+            });
+    }
+
+// Función para agregar formulario de producto vacío
+// Función para agregar formulario de producto vacío
+function agregarFormularioProductoVacio() {
+    const productosContainer = document.getElementById('productos-container');
+    const productoForms = productosContainer.querySelectorAll('.producto-form');
+    const newIndex = productoForms.length;
+    
+    const nuevoProductoDiv = document.createElement('div');
+    nuevoProductoDiv.className = 'producto-form mb-3 p-3 border rounded';
+    nuevoProductoDiv.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Nombre del Producto</label>
+                    <input type="text" class="form-control" 
+                           name="productos-${newIndex}-nombre" required>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="form-group">
+                    <label>Precio</label>
+                    <input type="number" step="0.01" class="form-control" 
+                           name="productos-${newIndex}-precio" required>
+                </div>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="button" class="btn btn-danger btn-remove-producto">
+                    X
+                </button>
+            </div>
+        </div>
+    `;
+    
+    productosContainer.appendChild(nuevoProductoDiv);
+    
+    // Configurar evento para el nuevo botón de eliminar
+    nuevoProductoDiv.querySelector('.btn-remove-producto').addEventListener('click', function() {
+        if (document.querySelectorAll('.producto-form').length > 1) {
+            this.closest('.producto-form').remove();
+            reindexarProductos();
+        }
+    });
+}
+
+// Función para reindexar productos después de eliminar
+function reindexarProductos() {
+    const productosForms = document.querySelectorAll('.producto-form');
+    productosForms.forEach((form, newIndex) => {
+        form.querySelectorAll('input').forEach(input => {
+            const oldName = input.name;
+            const newName = oldName.replace(/productos-\d+-/, `productos-${newIndex}-`);
+            input.name = newName;
+        });
+    });
+}
+    // Función para agregar formulario de producto con datos
+function agregarFormularioProducto(producto, index) {
+    const productosContainer = document.getElementById('productos-container');
+    
+    const nuevoProductoDiv = document.createElement('div');
+    nuevoProductoDiv.className = 'producto-form mb-3 p-3 border rounded';
+    nuevoProductoDiv.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Nombre del Producto</label>
+                    <input type="text" class="form-control" 
+                           name="productos-${index}-nombre" value="${producto.nombre || ''}" required>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="form-group">
+                    <label>Precio</label>
+                    <input type="number" step="0.01" class="form-control" 
+                           name="productos-${index}-precio" value="${producto.precio || ''}" required>
+                </div>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="button" class="btn btn-danger btn-remove-producto" ${index === 0 ? 'disabled' : ''}>
+                    X
+                </button>
+            </div>
+        </div>
+    `;
+    
+    productosContainer.appendChild(nuevoProductoDiv);
+    }
+
+    // Función para confirmar acciones (agregar/modificar/eliminar)
+    function confirmarAccion(action) {
+        Swal.fire({
+            title: "Ingrese el código de usuario",
+            input: "text",
+            inputPlaceholder: "Código de usuario",
+            showCancelButton: true,
+            confirmButtonText: "Confirmar",
+            cancelButtonText: "Cancelar",
+            inputValidator: (value) => {
+                if (!value) {
+                    return "Debe ingresar el código de usuario";
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById("codigoUsuario").value = result.value;
+                document.getElementById("actionType").value = action;
+                
+                // Validar productos antes de enviar
+                if (!validarProductos()) {
+                    return;
+                }
+                
+                // Agregar un input oculto con el nombre del botón para identificar la acción
+                let inputAccion = document.createElement("input");
+                inputAccion.type = "hidden";
+                inputAccion.name = action;
+                inputAccion.value = "1";
+                document.getElementById("proveedorForm").appendChild(inputAccion);
+
+                document.getElementById("proveedorForm").submit();
+            }
+        });
+    }
+
+   // Función para validar los productos antes de enviar el formulario
+function validarProductos() {
+    const productosForms = document.querySelectorAll('.producto-form');
+    let isValid = true;
+    let hasValidProduct = false;
+    
+    productosForms.forEach((form) => {
+        // Usa selectores más flexibles que no dependan del índice exacto
+        const nombre = form.querySelector('[name*="-nombre"]');
+        const precio = form.querySelector('[name*="-precio"]');
+        
+        // Validar solo si el producto tiene nombre
+        if (nombre && nombre.value.trim()) {
+            hasValidProduct = true;
+            
+            if (!precio || !precio.value || isNaN(parseFloat(precio.value))) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'El precio debe ser un número válido para el producto: ' + nombre.value,
+                    icon: 'error'
+                });
+                isValid = false;
+                return false; // Salir del forEach
+            }
+        }
+    });
+    
+    // Verificar que al menos un producto tenga datos
+    if (!hasValidProduct) {
+        Swal.fire({
+            title: 'Error',
+            text: 'Debe agregar al menos un producto válido',
+            icon: 'error'
+        });
+        return false;
+    }
+    
+    return isValid;
+}
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejar el botón para agregar más productos
+    const btnAddProducto = document.getElementById('btn-add-producto');
+    if (btnAddProducto) {
+        btnAddProducto.addEventListener('click', agregarFormularioProductoVacio);
+    }
+    
+    // Configurar eventos para botones de eliminar existentes
+    document.querySelectorAll('.btn-remove-producto').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (document.querySelectorAll('.producto-form').length > 1) {
+                this.closest('.producto-form').remove();
+                reindexarProductos();
+            }
+        });
+    });
+        
+        // Inicializar con al menos un formulario de producto vacío si no hay proveedor seleccionado
+        if (!document.querySelector('.proveedor-card.selected')) {
+            agregarFormularioProductoVacio(0);
+        }
+    });
+</script>
+
+
+{% for field, errors in form.errors.items() %}
+    {% for error in errors %}
+        <div class="alert alert-danger">
+            {{ field }}: {{ error }}
+        </div>
+    {% endfor %}
+{% endfor %}
+
+
+{% endblock %}

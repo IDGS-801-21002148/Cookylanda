@@ -1,0 +1,108 @@
+{% extends "layoutYolis.html" %}
+{% from "_macrosYolanda.html" import validar_cantidad, validar_fecha %}
+
+{% block container %}
+
+<div class="container mt-5">
+    <div class="row">
+        <!-- Contenedor de Galletas y Modalidad a la izquierda -->
+        <div class="col-md-6">
+            <div class="shadow p-4 mb-4 bg-transparent rounded">
+                <form method="POST" action="{{ url_for('ventas') }}"  novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <div class="row">
+                        <!-- Galletas (izquierda) -->
+                        <div class="col-md-6">
+                            <div class="shadow p-4 mb-4 bg-body rounded">
+                                <h2>Galletas</h2>
+                                <label for="galleta" class="form-label">Selecciona tu galleta:</label>
+                                <select class="form-select" name="galleta" id="galleta" required>
+                                    {% for galleta in galletas %}
+                                        <option value="{{ galleta }}">{{ galleta }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Modalidad (derecha dentro del mismo bloque) -->
+                        <div class="col-md-6">
+                            <div class="shadow p-4 mb-4 bg-body rounded">
+                                <h2>Modalidad</h2>
+                                <select class="form-select" name="modalidad" id="modalidad" required>
+                                    <option value="Caja Chica (4 galletas)">Caja Chica (4 galletas)</option>
+                                    <option value="Caja Grande (12 galletas)">Caja Grande (12 galletas)</option>
+                                    <option value="Medio Kilo (20 galletas)">Medio Kilo (20 galletas)</option>
+                                    <option value="Kilo completo (40 galletas)">Kilo completo (40 galletas)</option>
+                                    <option value="suelta">Suelta</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center" style="width: 32%;">
+                        {{ validar_cantidad(form.cantidad) }}
+                    </div>
+
+                    <!-- Botón Agregar -->
+                    <div class="text-center mt-4">
+                        <button type="submit" name="agregar" class="btn iconoGalleta">
+                            <img src="../static/img/agregar.png" alt="Botón agregar producto" />
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Contenedor a la derecha -->
+        <div class="col-md-6">
+            <div class="shadow p-4 mb-4 bg-transparent rounded">
+                <div class="shadow p-4 mb-4 bg-body rounded">
+                    <h2>Detalle de Ventas</h2>
+                    
+                    <form method="POST" action="{{ url_for('ventas') }}" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        
+                        <div class="mb-3">
+                            <label for="fecha_venta" class="form-label">Fecha de Venta:</label>
+                            <input type="date" class="form-control" name="fecha_venta" id="fecha_venta" required>
+                        </div>
+
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nombre Galleta</th>
+                                    <th>Modalidad</th>
+                                    <th>Cantidad</th>
+                                    <th>Subtotal (MXN)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venta in ventas %}
+                                <tr>
+                                    <td>{{ venta.galleta }}</td>
+                                    <td>{{ venta.modalidad }}</td>
+                                    <td>{{ venta.cantidad }}</td>
+                                    <td>${{ "%.2f"|format(venta.subtotal) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        
+                        <h4 class="text-end">Total: ${{ "%.2f"|format(total) }}</h4>
+                        
+                        <div class="d-flex justify-content-between mt-3">
+                            <button type="submit" name="eliminar" class="btn btn-danger">
+                                Eliminar Última
+                            </button>
+                            <button type="submit" name="finalizar" class="btn btn-success">
+                                Finalizar Venta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

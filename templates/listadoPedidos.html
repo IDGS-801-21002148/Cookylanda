@@ -1,0 +1,98 @@
+{% extends "layoutCliente.html" %}
+
+
+{% block container %}
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Historial de Pedidos {% if session.get('usuario_nombre') %}({{ session.usuario_nombre }}){% endif %}</h2>
+        
+    {% if not pedidos_con_detalle %}
+        <div class="alert alert-info text-center">
+            No tienes pedidos registrados
+        </div>
+    {% else %}
+        {% for pedido_data in pedidos_con_detalle %}
+        <div class="card mb-4 shadow">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5>Pedido #{{ pedido_data.pedido.idPedido }}</h5>
+                        <small>Fecha: {{ format_date(pedido_data.pedido.fechaApartado) }}</small>
+                    </div>
+                    <div>
+                        <span class="badge bg-{% if pedido_data.pedido.estado == 'Completado' %}success{% elif pedido_data.pedido.estado == 'Pendiente' %}warning{% else %}danger{% endif %}">
+                            {{ pedido_data.pedido.estado }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Fecha de entrega:</strong> {{ format_date(pedido_data.pedido.fechaDeEntrega) }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Anticipo:</strong> ${{ "%.2f"|format(pedido_data.pedido.anticipo) }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Total:</strong> ${{ "%.2f"|format(pedido_data.pedido.totalApagar) }}
+                    </div>
+                </div>
+                
+                <h5>Detalle del pedido:</h5>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Galleta</th>
+                            <th>Presentación</th>
+                            <th>Cantidad</th>
+                            <th>Resto a pagar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in range(pedido_data.detalles|length) %}
+                        <tr>
+                            <td>{{ pedido_data.galletas[i].nombre }}</td>
+                            <td>{{ pedido_data.detalles[i].Presentacion }}</td>
+                            <td>{{ pedido_data.detalles[i].cantidad }}</td>
+                            <td>${{ "%.2f"|format(pedido_data.detalles[i].restoApagar) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <!-- Botón para cancelar pedido (solo si está pendiente) -->
+                {% if pedido_data.pedido.estado == 'Pendiente' %}
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelarPedidoModal{{ pedido_data.pedido.idPedido }}">
+                    Cancelar Pedido
+                </button>
+                
+                <!-- Modal para confirmar cancelación -->
+                <div class="modal fade" id="cancelarPedidoModal{{ pedido_data.pedido.idPedido }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Confirmar cancelación</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                ¿Estás seguro de que deseas cancelar este pedido?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                                <form action="{{ url_for('cancelar_historico', pedido_id=pedido_data.pedido.idPedido) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-danger">Sí, cancelar</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+{% endblock %}

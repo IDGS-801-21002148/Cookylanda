@@ -1,0 +1,351 @@
+html, body {
+    height: 100%; /* Altura completa */
+    margin: 0; /* Sin márgenes */
+    background: url('../img/fondo.png') no-repeat center center fixed;
+    background-size: cover; /* Asegura que cubra todo */
+    overflow-x: hidden; /* Evita el scroll horizontal */
+    background-size: cover;
+    z-index: 0; /* Fondo siempre detrás */
+}
+
+@import url(//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css);
+@import url(https://fonts.googleapis.com/css?family=Titillium+Web:300);
+
+.fa-2x {
+    font-size: 2em;
+}
+.fa {
+    position: relative;
+    display: table-cell;
+    width: 60px;
+    height: 36px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 20px;
+}
+
+.main-menu {
+    background: url('../img/fondoLateral.png') no-repeat center center;
+    background-size: cover;
+    border-right: 1px solid #e5e5e5;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    left: 0;
+    width: 60px;
+    overflow: hidden;
+    -webkit-transition: width 0.3s linear;
+    transition: width 0.3s linear;
+    z-index: 10; /* Superior a los botones */
+}
+
+.main-menu:hover, nav.main-menu.expanded {
+    width: 250px; /* Ancho cuando se expande */
+    overflow: visible;
+}
+
+.main-menu>ul {
+    margin: 7px 0;
+}
+
+.main-menu li {
+    position: relative;
+    display: flex;
+    align-items: center; /* Alinear verticalmente */
+    justify-content: flex-start; /* Mantener íconos a la izquierda */
+    padding: 10px 15px; /* Espaciado */
+}
+
+.main-menu li>a {
+    position: relative;
+    display: flex;
+    align-items: center; /* Alineación uniforme ícono y texto */
+    border-collapse: collapse;
+    border-spacing: 0;
+    color: #000000;
+    font-family: arial;
+    font-size: 16px; /* Tamaño de fuente aumentado */
+    text-decoration: none;
+    -webkit-transform: translateZ(0) scale(1, 1);
+    -webkit-transition: all .1s linear;
+    transition: all .1s linear;
+}
+
+/* Ocultar texto inicialmente */
+.main-menu .nav-text {
+    display: none;
+    opacity: 0;
+    padding-left: 15px; /* Alinear uniformemente con los íconos */
+    -webkit-transition: opacity 0.3s ease-in-out;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Mostrar texto al expandir */
+.main-menu:hover .nav-text {
+    display: inline; /* Mostrar texto */
+    opacity: 1; /* Hacer visible */
+    text-align: left; /* Alinear texto a la izquierda */
+}
+
+/* Ajuste general de íconos */
+.nav-icon-img {
+    width: 50px; /* Tamaño base de los íconos */
+    height: auto;
+    margin-right: 10px; /* Espaciado general entre ícono y texto */
+}
+
+/* Ajustes específicos para Menu y Ventas */
+
+/* Texto de Menu */
+.main-menu li:first-child .nav-text {
+    padding-left: 25px; /* Desplazar texto hacia la derecha (→) */
+}
+
+/* Texto de Ventas */
+.nav-icon-img.ventas-icon + .nav-text {
+    padding-left: 25px; /* Desplazar texto hacia la derecha (→) */
+}
+
+/* Ícono del menú */
+.nav-icon-img.menu-icon {
+    width: 32px; /* Ajustar tamaño específico */
+}
+
+/* Ícono de Ventas */
+.nav-icon-img.ventas-icon {
+    width: 32px; /* Ajustar tamaño específico */
+}
+
+/* Ícono de Producción */
+.nav-icon-img.produccion-icon {
+    width: 60px; /* Tamaño del ícono */
+    height: auto;
+    margin-left: -10px; /* Mover más hacia la izquierda */
+}
+
+/* Ícono de Recetas */
+.nav-icon-img.recetas-icon {
+    width: 50px;
+}
+
+/* Ícono del Dashboard */
+.nav-icon-img.dashboard-icon {
+    width: 50px;
+}
+
+/* Ícono de Proveedores */
+.nav-icon-img.proveedores-icon {
+    width: 50px;
+}
+
+/* Ícono de Compras */
+.nav-icon-img.compras-icon {
+    width: 50px;
+}
+
+/* Ícono de Materia Prima */
+.nav-icon-img.materia-prima-icon {
+    width: 50px;
+}
+
+/* Ícono de Mermas */
+.nav-icon-img.mermas-icon {
+    width: 50px;
+}
+
+/* Ícono de Crear Usuario */
+.nav-icon-img.crear-usuario-icon {
+    width: 40px;
+}
+
+/* Ícono de Cerrar Sesión */
+.nav-icon-img.cerrar-sesion-icon {
+    width: 40px;
+}
+
+.main-menu>ul.logout {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+}
+
+.no-touch .scrollable.hover {
+    overflow-y: hidden;
+}
+
+.no-touch .scrollable.hover:hover {
+    overflow-y: auto;
+    overflow: visible;
+}
+
+a:hover, a:focus {
+    text-decoration: none;
+}
+
+nav {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
+
+nav ul, nav li {
+    outline: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none; /* Quitar puntos de la lista */
+}
+
+/* Ajuste general */
+img {
+    width: 70%;
+}
+
+
+/*----------------------------------------------------------------------*/
+
+/* Estilos generales del card */
+.card {
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: #E7DED3; /* Fondo uniforme del card */
+    color: #582E32; /* Ajuste del color del texto */
+}
+
+/* Estilo para el contenido interno del card */
+.card .card-body {
+    background-color: #E7DED3; /* Fondo para el área del cuerpo del card */
+    color: #582E32; /* Color del texto dentro del cuerpo */
+}
+
+/* Estilos para la imagen en el card */
+.card-img-top {
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    height: 150px;
+    object-fit: contain; /* Mostrar la imagen completa */
+    width: 100%; /* Ajustar al ancho del contenedor */
+    background-color: #E7DED3; /* Garantizar consistencia del fondo */
+}
+
+/* Botón de advertencia */
+.btn-warning {
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 50px; /* Hacerlo completamente redondeado */
+    background-color: #FFC107; /* Fondo del botón */
+    border: none; /* Quitar bordes adicionales */
+    color: #582E32; /* Ajustar el contraste del texto */
+    padding: 10px 20px; /* Espaciado del botón */
+}
+
+
+/* Efecto hover del botón */
+.btn-warning:hover {
+    background-color: #e0a800; /* Cambiar color al pasar el cursor */
+}
+
+/* Indicadores de estado en el card */
+.status-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin: 10px auto;
+}
+
+.status-indicator.green {
+    background-color: #28a745;
+}
+
+.status-indicator.yellow {
+    background-color: #ffc107;
+}
+
+.status-indicator.red {
+    background-color: #dc3545;
+}
+
+/* Fondo general del body */
+body {
+    background-color: #E7DED3;
+    font-family: Arial, sans-serif;
+}
+
+/* Encabezado de nivel 1 */
+h1 {
+    font-size: 2.5rem;
+}
+
+
+.btn-bottom-right {
+    position: fixed;
+    bottom: 20px; /* Distance from the bottom of the page */
+    right: 20px; /* Distance from the right of the page */
+    z-index: 1000; /* Ensures it appears above most elements */
+    display: block;
+    width: 60px; /* Adjust width as needed */
+    height: 60px; /* Adjust height as needed */
+}
+
+.btn-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%; /* Optional: Makes the button circular */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Adds shadow for a floating effect */
+}
+
+.btn-bottom-right:hover .btn-img {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5); /* Adds a stronger shadow on hover */
+    transform: scale(1.1); /* Slightly enlarges the button on hover */
+    transition: all 0.3s ease; /* Smooth hover effect */
+}
+
+
+
+
+
+
+
+.btn-bottom-right {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    width: 60px;
+    height: 60px;
+}
+
+.btn-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+
+.status-circle {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-left: 10px;
+    background-color: transparent; /* Si no hay estado definido */
+    border: 1px solid #ccc; /* Borde para visualización */
+    position: relative;
+}
+
+
+
+.status-circle.bg-success {
+    background-color: #28a745; /* Verde: suficiente stock */
+}
+
+.status-circle.bg-warning {
+    background-color: #ffc107; /* Amarillo: stock moderado */
+}
+
+.status-circle.bg-danger {
+    background-color: #dc3545; /* Rojo: bajo stock */
+}

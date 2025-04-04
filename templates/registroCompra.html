@@ -1,0 +1,836 @@
+{% extends "layoutAdministrador.html" %}
+
+{% block content %}
+{% import "_macrosJuan.html" as macro %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+<div class="container mt-5">
+    <h1 class="text-center header">REGISTRAR COMPRA</h1>
+
+    <form id="compraForm" method="POST" action="">
+        {{ form.hidden_tag() }}  <!-- Token CSRF aquí -->
+        <input type="hidden" id="idCompra" name="idCompra" value="">
+        <div class="row">
+            <!-- Columna izquierda -->
+            <div class="col-md-4">
+                <div class="mb-5">
+                    <label for="producto">Producto</label>
+                    <select name="producto[]" id="producto" class="form-control" required disabled>
+                        <option value="">Seleccione un proveedor primero</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Columna central -->
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="cantidad">Unidades por presentación</label>
+                    <input type="number" class="form-control" name="cantidad[]" id="cantidad" placeholder="Cantidad" min="1">
+                </div>
+            </div>
+
+            <!-- Columna derecha -->
+            <div class="col-md-4">
+                <div class="mb-5">
+                    <div class="mb-5">
+                        <label for="presentacion">Presentación</label>
+                        <select class="form-control" name="presentacion[]" id="presentacion" required>
+                            <option value="">Seleccionar</option>
+                            <option value="KG">KG</option>
+                            <option value="Saco">Saco</option>
+                            <option value="Bolsa">Bolsa</option>
+                            <option value="Costal">Costal</option>
+                            <option value="Litro">Litro</option>
+                            <option value="Galón">Galón</option>
+                            <option value="Caja">Caja</option>
+                            <option value="CajaH">Caja de huevo</option>
+
+                        </select>
+                    </div>
+                    
+                        <div class="mb-5">
+                            <label for="proveedor">Proveedor</label>
+                            <select name="proveedor" id="proveedor" class="form-control" required>
+                                <option value="">Seleccionar proveedor</option>
+                                {% for proveedor in proveedores %}
+                                    <option value="{{ proveedor.split(' - ')[0] }}">{{ proveedor }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    
+                    
+                    <div class="col-md-4">
+                        
+                    </div>
+                </div>
+                </div>
+        </div>
+        <div class="text-center mt-3">
+            <button type="button" class="buttonAG" id="agregarATabla">Agregar a tabla</button>
+        </div>
+        
+        <!-- Tabla de productos seleccionados -->
+        <div class="mt-4">
+            <table class="table table-striped" id="tablaProductos">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Presentación</th>
+                        <th>Precio Unitario</th>
+                        <th>Subtotal</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoTabla">
+                    <!-- Los productos se agregarán aquí dinámicamente -->
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-end fw-bold">Total:</td>
+                        <td id="totalTabla">$0.00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+            <input type="hidden" id="totalCompra" name="total" value="0">
+
+        </div>
+
+        <button type="button" class="buttonAg" onclick="confirmarAccion('submit_agregar')">Finalizar Compra</button>
+        <button type="button" class="buttonMo" onclick="window.location.href='/compra'">Ver compras totales</button>
+
+
+        <input type="hidden" id="actionType" name="actionType">
+        <input type="hidden" id="codigoUsuario" name="codigoUsuario">
+    </form>
+
+<script>
+    const cantidadPorPresentacion = {
+        "Caja": 12,   // Litros
+        "Saco": 25,   // Kilogramos
+        "Costal": 100, // Kilogramos
+        "Bolsa": 10,   // Kilogramos
+        "Litro":1,
+        "Galón":10,
+        "Caja":12,
+        "KG":1,
+        "CajaH":45
+
+    };
+
+    function actualizarCantidad() {
+        const presentaciones = document.querySelectorAll('select[name="presentacion[]"]');
+        const cantidades = document.querySelectorAll('input[name="cantidad[]"]');
+
+        presentaciones.forEach((select, index) => {
+            select.addEventListener('change', function () {
+                const seleccion = select.value;
+                const cantidadInput = cantidades[index];
+
+                // Asignar la cantidad según la presentación
+                if (cantidadPorPresentacion[seleccion]) {
+                    cantidadInput.value = cantidadPorPresentacion[seleccion];
+                } else {
+                    cantidadInput.value = '';  // Dejar vacío si no hay valor asignado
+                }
+            });
+        });
+    }
+
+    // Llamar la función al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        actualizarCantidad();
+    });
+</script>
+
+
+<!-- Script para SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function confirmarAccion(action) {
+        Swal.fire({
+            title: "Ingrese el código de usuario",
+            input: "text",
+            inputPlaceholder: "Código de usuario",
+            showCancelButton: true,
+            confirmButtonText: "Confirmar",
+            cancelButtonText: "Cancelar",
+            inputValidator: (value) => {
+                if (!value) {
+                    return "Debe ingresar el código de usuario";
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById("codigoUsuario").value = result.value;
+                document.getElementById("actionType").value = action;
+                
+                let inputAccion = document.createElement("input");
+                inputAccion.type = "hidden";
+                inputAccion.name = action;
+                inputAccion.value = "1";
+                document.getElementById("compraForm").appendChild(inputAccion);
+
+                document.getElementById("compraForm").submit();
+            }
+        });
+    }
+</script>
+
+<script>
+
+    const productoSelects = document.querySelectorAll('select[name="producto[]"]');
+    const presentacionSelects = document.querySelectorAll('select[name="presentacion[]"]');
+    
+
+
+const presentacionesPorProducto = {
+    // Productos que tienen presentaciones limitadas (litro, galón, caja)
+    "Seleccionar":{
+        presentaciones:["Seleccionar"],
+        cantidades:{"Seleccionar": 0}
+    },
+    "Mantequilla derretida": {
+        presentaciones: ["Seleccionar","Litro", "Galón", "Caja"],
+        cantidades: {"Seleccionar": 0, "Litro": 1, "Galón": 10, "Caja": 12 }
+    },
+    "Esencia de vainilla": {
+        presentaciones: ["Seleccionar","Litro", "Galón", "Caja"],
+        cantidades: {"Seleccionar": 0, "Litro": 1, "Galón": 10, "Caja": 12 }
+    },
+    "Mermelada de fresa": {
+        presentaciones: ["Seleccionar","Litro", "Galón", "Caja"],
+        cantidades: {"Seleccionar": 0, "Litro": 1, "Galón": 10, "Caja": 12 }
+    },
+    "Esencia de chicle": {
+        presentaciones: ["Seleccionar","Litro", "Galón", "Caja"],
+        cantidades: {"Seleccionar": 0, "Litro": 1, "Galón": 10, "Caja": 12 }
+    },
+    "Mermelada de frambuesa": {
+        presentaciones: ["Seleccionar","Litro", "Galón", "Caja"],
+        cantidades: {"Seleccionar": 0, "Litro": 1, "Galón": 10, "Caja": 12 }
+    },
+    "Jugo de limon": {
+        presentaciones: ["Seleccionar","Litro", "Galón", "Caja"],
+        cantidades: {"Seleccionar": 0, "Litro": 1, "Galón": 10, "Caja": 12 }
+    },
+    // Productos con presentaciones en kg, bolsa, saco, costal
+    "Harina de trigo": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Azucar": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Polvo para hornear": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Sal": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Almendras picadas": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Mini bombones": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Cafe instantaneo": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Cajeta": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Cerezas en almibar picadas": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Chispas de colores": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Chispas de chocolate": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Chispas de chocolate blanco": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Fresas": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Frambuesas": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Crema batida": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },"Gomitas delfin": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },"Dulce leche": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },"Durazno en almibar": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },"Colorante morado": {
+        presentaciones: ["Seleccionar","KG", "Bolsa", "Saco", "Costal"],
+        cantidades: {"Seleccionar": 0, "KG": 1, "Bolsa": 10, "Saco": 25, "Costal": 100 }
+    },
+    "Huevo": {
+        presentaciones: ["Seleccionar","CajaH","Bolsa"],
+        cantidades: {"Seleccionar": 0, "CajaH": 45, "Bolsa":10 }
+    }
+};
+
+// Mapeo de unidades por producto
+const unidadesPorProducto = {
+    "Huevo": "unidades",
+    // Productos líquidos
+    "Mantequilla derretida": "litros",
+    "Esencia de vainilla": "litros",
+    "Mermelada de fresa": "litros",
+    "Esencia de chicle": "litros",
+    "Mermelada de frambuesa": "litros",
+    "Jugo de limon": "litros",
+    // El resto usa kilos por defecto
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar etiqueta de cantidad al seleccionar producto
+    document.addEventListener('change', function(event) {
+        if (event.target.name === 'producto[]') {
+            const producto = event.target.value;
+            const cantidadLabel = event.target.closest('.row').querySelector('label[for^="cantidad"]');
+            
+            if (cantidadLabel) {
+                // Determinar la unidad adecuada
+                let unidad = unidadesPorProducto[producto] || "kilos";
+                
+                // Casos especiales para presentaciones específicas
+                if (producto === "Huevo") {
+                    const presentacion = event.target.closest('.row').querySelector('select[name="presentacion[]"]').value;
+                    if (presentacion === "CajaH") {
+                        unidad = "unidades (caja)";
+                    } else if (presentacion === "Bolsa") {
+                        unidad = "unidades (bolsa)";
+                    }
+                }
+                
+                // Actualizar el label
+                cantidadLabel.textContent = `Cantidad (${unidad})`;
+                
+                // También actualizar en la tabla si ya existe
+                const tabla = document.getElementById('tablaProductos');
+                if (tabla) {
+                    const celdasCantidad = tabla.querySelectorAll('tbody tr td:nth-child(2)');
+                    celdasCantidad.forEach(celda => {
+                        if (celda.textContent.includes('(')) {
+                            celda.textContent = celda.textContent.split(' (')[0] + ` (${unidad})`;
+                        } else {
+                            celda.textContent += ` (${unidad})`;
+                        }
+                    });
+                }
+            }
+        }
+    });
+
+    // Actualizar también cuando cambia la presentación (especial para huevos)
+    document.addEventListener('change', function(event) {
+        if (event.target.name === 'presentacion[]') {
+            const productoSelect = event.target.closest('.row').querySelector('select[name="producto[]"]');
+            if (productoSelect && productoSelect.value === "Huevo") {
+                const presentacion = event.target.value;
+                const cantidadLabel = event.target.closest('.row').querySelector('label[for^="cantidad"]');
+                
+                if (cantidadLabel) {
+                    let unidad = "unidades";
+                    if (presentacion === "CajaH") {
+                        unidad = "unidades (caja)";
+                    } else if (presentacion === "Bolsa") {
+                        unidad = "unidades (bolsa)";
+                    }
+                    cantidadLabel.textContent = `Cantidad (${unidad})`;
+                }
+            }
+        }
+    });
+});
+
+
+// Precios de los productos
+const preciosPorProducto = {
+    
+};
+
+
+
+
+// Variable para controlar el estado del proveedor
+let proveedorBloqueado = false;
+let proveedorSeleccionado = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const agregarATablaBtn = document.getElementById('agregarATabla');
+    const proveedorSelect = document.getElementById('proveedor');
+    
+    // Función para bloquear el proveedor
+    function bloquearProveedor() {
+        if (!proveedorBloqueado && proveedorSelect.value) {
+            proveedorSeleccionado = proveedorSelect.value;
+            proveedorSelect.disabled = true;
+            proveedorSelect.classList.add('proveedor-bloqueado');
+            proveedorBloqueado = true;
+            
+            // Agregar indicador visual
+            const labelProveedor = document.querySelector('label[for="proveedor"]');
+            if (labelProveedor) {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-info ms-2';
+                labelProveedor.appendChild(badge);
+            }
+            
+            Swal.fire({
+                icon: 'info',
+                title: 'Proveedor bloqueado',
+                text: 'Todos los productos deben ser del mismo proveedor',
+                timer: 2000,
+                toast: true,
+                position: 'top-end'
+            });
+        }
+    }
+    
+    // Evento para agregar producto a la tabla
+    agregarATablaBtn.addEventListener('click', function() {
+        // Validar campos
+        const producto = document.querySelector('select[name="producto[]"]').value;
+        const cantidad = document.querySelector('input[name="cantidad[]"]').value;
+        const presentacion = document.querySelector('select[name="presentacion[]"]').value;
+        
+        if (producto === "Seleccionar" || cantidad === "" || presentacion === "Seleccionar") {
+            Swal.fire('Error', 'Por favor complete todos los campos del producto', 'error');
+            return;
+        }
+        
+        // Bloquear proveedor al primer producto válido
+        if (!proveedorBloqueado) {
+            bloquearProveedor();
+        }
+        
+        // Agregar a la tabla
+        agregarFilaATabla(producto, cantidad, presentacion);
+        
+        // Limpiar campos
+        document.querySelector('select[name="producto[]"]').value = "Seleccionar";
+        document.querySelector('input[name="cantidad[]"]').value = "";
+        document.querySelector('select[name="presentacion[]"]').value = "Seleccionar";
+        
+        // Actualizar total
+        actualizarTotalTabla();
+    });
+    
+    // Actualizar presentaciones al cambiar producto
+    actualizarPresentaciones();
+});
+// Escuchar cambios en la selección del producto
+productoSelects.forEach(productoSelect => {
+    productoSelect.addEventListener('change', actualizarPresentaciones);
+});
+// Función para actualizar las presentaciones según el producto seleccionado
+function actualizarPresentaciones() {
+    productoSelects.forEach((productoSelect, index) => {
+        const presentacionSelect = presentacionSelects[index];
+        const producto = productoSelect.value;
+
+        // Limpiar las opciones de presentación
+        presentacionSelect.innerHTML = '';
+
+        if (presentacionesPorProducto.hasOwnProperty(producto)) {
+            // Producto con opciones predefinidas
+            presentacionesPorProducto[producto].presentaciones.forEach(pres => {
+                let option = document.createElement("option");
+                option.value = pres;
+                option.textContent = pres;
+                presentacionSelect.appendChild(option);
+            });
+        } else {
+            // Producto no predefinido, habilitar todas las opciones menos CajaH
+            const opcionesGenerales = ["Seleccionar", "Litro", "Galón", "Caja", "KG", "Bolsa", "Saco", "Costal"];
+            opcionesGenerales.forEach(pres => {
+                if (pres !== "CajaH") { // Excluir CajaH
+                    let option = document.createElement("option");
+                    option.value = pres;
+                    option.textContent = pres;
+                    presentacionSelect.appendChild(option);
+                }
+            });
+        }
+    });
+}
+
+function agregarFilaATabla(producto, cantidad, presentacion) {
+    // Obtener el precio unitario: predefinido o desde la base de datos
+    let precioUnitario = preciosPorProducto[producto];
+
+    if (!precioUnitario) {
+        // Buscar el <select> de producto para obtener el precio desde data-precio
+        const productoSelect = document.querySelector(`select[name="producto[]"] option[value="${producto}"]`);
+        if (productoSelect) {
+            precioUnitario = parseFloat(productoSelect.dataset.precio) || 0;
+        }
+    }
+
+    // Calcular subtotal
+    const subtotal = precioUnitario * parseFloat(cantidad);
+    
+    // Determinar la unidad adecuada
+    let unidad = unidadesPorProducto[producto] || "kilos";
+    if (producto === "Huevo") {
+        unidad = (presentacion === "CajaH") ? "unidades (caja)" : "unidades (bolsa)";
+    }
+
+    // Crear nueva fila con identificador único
+    const filaId = 'fila-' + Date.now();
+    const nuevaFila = document.createElement('tr');
+    nuevaFila.id = filaId;
+    nuevaFila.dataset.subtotal = subtotal;
+    nuevaFila.dataset.cantidad = cantidad; // Guardar cantidad numérica
+    
+    // Mostrar unidades en la tabla pero guardar solo el número
+    nuevaFila.innerHTML = `
+        <td>${producto}</td>
+        <td>${cantidad} <span class="unidad-texto">(${unidad})</span></td>
+        <td>${presentacion}</td>
+        <td>$${precioUnitario.toFixed(2)}</td>
+        <td>$${subtotal.toFixed(2)}</td>
+        <td>
+            <button class="btn btn-danger btn-sm" onclick="eliminarFila('${filaId}', ${subtotal})">Eliminar</button>
+        </td>
+    `;
+
+    // Agregar la fila a la tabla
+    document.getElementById('cuerpoTabla').appendChild(nuevaFila);
+    
+    // Actualizar total
+    actualizarTotalTabla();
+}
+
+
+
+// Función para eliminar fila
+function eliminarFila(filaId, subtotal) {
+    document.getElementById(filaId).remove();
+    actualizarTotalTabla();
+}
+
+// Función para actualizar el total de la tabla
+function actualizarTotalTabla() {
+    let total = 0;
+    const filas = document.querySelectorAll('#cuerpoTabla tr');
+    
+    filas.forEach(fila => {
+        const subtotal = parseFloat(fila.dataset.subtotal);
+        total += subtotal;
+    });
+    
+    document.getElementById('totalTabla').textContent = `$${total.toFixed(2)}`;
+    document.getElementById('totalCompra').value = total.toFixed(2);
+}
+
+// Función para confirmar acción (finalizar compra)
+function confirmarAccion(action) {
+    const filas = document.querySelectorAll('#cuerpoTabla tr');
+    const proveedorSelect = document.getElementById('proveedor');
+    
+    if (filas.length === 0 && action === 'submit_agregar') {
+        Swal.fire('Error', 'No hay productos en la tabla', 'error');
+        return;
+    }
+    
+    Swal.fire({
+        title: "Código de usuario",
+        input: "text",
+        showCancelButton: true,
+        confirmButtonText: "Confirmar",
+        cancelButtonText: "Cancelar",
+        inputValidator: (value) => !value && "Debe ingresar el código"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Limpiar campos ocultos previos
+            document.querySelectorAll('[name^="productos["]').forEach(el => el.remove());
+            
+            // Agregar productos como campos ocultos (limpiando las unidades)
+            filas.forEach((fila, index) => {
+                const celdas = fila.querySelectorAll('td');
+                const producto = celdas[0].textContent;
+                
+                // Extraer solo el valor numérico de la cantidad (eliminar unidades entre paréntesis)
+                const cantidadTexto = celdas[1].textContent;
+                const cantidad = cantidadTexto.split(' (')[0].trim();
+                
+                const presentacion = celdas[2].textContent;
+                
+                agregarCampoOculto('productos', index, 'producto', producto);
+                agregarCampoOculto('productos', index, 'cantidad', cantidad);
+                agregarCampoOculto('productos', index, 'presentacion', presentacion);
+            });
+            
+            document.getElementById("codigoUsuario").value = result.value;
+            document.getElementById("actionType").value = action;
+            
+            // Restablecer el campo de proveedor
+            proveedorSelect.disabled = false;
+            proveedorSelect.classList.remove('proveedor-bloqueado');
+            proveedorBloqueado = false;
+            
+            const inputAccion = document.createElement("input");
+            inputAccion.type = "hidden";
+            inputAccion.name = action;
+            inputAccion.value = "1";
+            document.getElementById("compraForm").appendChild(inputAccion);
+            
+            document.getElementById("compraForm").submit();
+        }
+    });
+}
+
+// Función para agregar campos ocultos
+function agregarCampoOculto(baseName, index, fieldName, value) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = `${baseName}[${index}][${fieldName}]`;
+    input.value = value;
+    document.getElementById("compraForm").appendChild(input);
+}
+
+// Agregar producto cuando se selecciona un producto y cantidad
+productoSelects.forEach((productoSelect, index) => {
+    productoSelect.addEventListener('change', () => {
+        const producto = productoSelect.value;
+        const cantidad = parseInt(cantidadInputs[index].value) || 0;
+        const presentacion = presentacionSelects[index].value;
+        
+        if (producto !== "Seleccionar" && cantidad > 0) {
+            agregarProductoATabla(producto, cantidad, presentacion);
+        }
+    });
+
+    cantidadInputs[index].addEventListener('input', () => {
+        const producto = productoSelects[index].value;
+        const cantidad = parseInt(cantidadInputs[index].value) || 0;
+        const presentacion = presentacionSelects[index].value;
+        
+        if (producto !== "Seleccionar" && cantidad > 0) {
+            agregarProductoATabla(producto, cantidad, presentacion);
+        }
+    });
+});
+
+    </script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const proveedorSelect = document.getElementById('proveedor');
+        const productoSelect = document.getElementById('producto');
+        
+        // Evento cuando cambia el proveedor
+        proveedorSelect.addEventListener('change', function() {
+            const proveedorId = this.value;
+            
+            if (proveedorId) {
+                // Habilitar el select de productos
+                productoSelect.disabled = false;
+                
+                // Limpiar opciones anteriores
+                productoSelect.innerHTML = '<option value="">Cargando productos...</option>';
+                
+                // Obtener productos del proveedor via AJAX
+                fetch(`/obtener_productos_proveedor/${proveedorId}`)
+                    .then(response => response.json())
+                    .then(productos => {
+                        // Limpiar y llenar el select de productos
+                        productoSelect.innerHTML = '<option value="">Seleccionar producto</option>';
+                        
+                        productos.forEach(producto => {
+                            const option = document.createElement('option');
+                            option.value = producto.nombre;
+                            option.textContent = producto.nombre;
+                            option.dataset.precio = producto.precio;
+                            productoSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        productoSelect.innerHTML = '<option value="">Error al cargar productos</option>';
+                    });
+            } else {
+                // Deshabilitar y limpiar si no hay proveedor seleccionado
+                productoSelect.disabled = true;
+                productoSelect.innerHTML = '<option value="">Seleccione un proveedor primero</option>';
+            }
+        });
+        
+        // Actualizar precio cuando se selecciona un producto
+        productoSelect.addEventListener('change', function() {
+            if (this.value) {
+                const precio = this.options[this.selectedIndex].dataset.precio;
+                // Aquí puedes actualizar algún campo de precio si lo necesitas
+                console.log(`Precio seleccionado: ${precio}`);
+            }
+        });
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const productoSelects = document.querySelectorAll('select[name="producto[]"]');
+    const cantidadInputs = document.querySelectorAll('input[name="cantidad[]"]');
+    const presentacionSelects = document.querySelectorAll('select[name="presentacion[]"]');
+    const cuerpoTabla = document.getElementById('cuerpoTabla');
+
+    // Precios de productos predefinidos
+    const preciosPorProducto = {
+        "Harina de trigo": 100,
+        "Mantequilla derretida": 150,
+        "Azucar": 70,
+        "Huevo": 300 / 45, // Precio por unidad
+        "Esencia de vainilla": 180,
+        "Polvo para hornear": 160,
+        "Sal": 7,
+        "Almendras picadas": 90,
+        "Mini bombones": 50,
+        "Cafe instantaneo": 70,
+        "Cajeta": 80,
+        "Cerezas en almibar picadas": 250,
+        "Esencia de chicle": 70,
+        "Chispas de colores": 25,
+        "Chispas de chocolate": 25,
+        "Chispas de chocolate blanco": 25,
+        "Mermelada de fresa": 40,
+        "Crema batida": 60,
+        "Gomitas delfin": 80,
+        "Dulce leche": 50,
+        "Durazno en almibar": 40,
+        "Colorante morado": 8,
+        "Mermelada de frambuesa": 60,
+        "Fresas": 35,
+        "Frambuesas": 40,
+        "Jugo de limon": 100
+    };
+
+    // Función para obtener el precio del producto (predefinido o desde base de datos)
+    async function obtenerPrecioProducto(producto) {
+        if (preciosPorProducto.hasOwnProperty(producto)) {
+            // Precio predefinido
+            return preciosPorProducto[producto];
+        } else {
+            // Si no está en precios predefinidos, obtener el precio de la base de datos
+            try {
+                let response = await fetch(`/obtener_precio_producto`, {
+                    method: 'POST',
+                    body: JSON.stringify({ producto }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    let data = await response.json();
+                    return data.precio || 0;
+                } else {
+                    console.error('Error al obtener el precio');
+                    return 0;
+                }
+            } catch (error) {
+                console.error('Error en la conexión:', error);
+                return 0;
+            }
+        }
+    }
+
+    // Función para agregar el producto a la tabla
+    async function agregarProductoATabla(producto, cantidad, presentacion) {
+        const precioUnitario = await obtenerPrecioProducto(producto);
+        const subtotal = precioUnitario * cantidad;
+
+        // Crear una nueva fila en la tabla
+        const fila = document.createElement('tr');
+        fila.dataset.subtotal = subtotal;
+
+        fila.innerHTML = `
+            <td>${producto}</td>
+            <td>${cantidad}</td>
+            <td>${presentacion}</td>
+            <td class="precio-unitario">${precioUnitario.toFixed(2)}</td>
+            <td class="subtotal">${subtotal.toFixed(2)}</td>
+            <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarProducto(this)">Eliminar</button></td>
+        `;
+
+        // Agregar la fila al cuerpo de la tabla
+        cuerpoTabla.appendChild(fila);
+
+        // Actualizar el total de la tabla
+        actualizarTotalTabla();
+    }
+
+    // Función para eliminar un producto de la tabla
+    function eliminarProducto(boton) {
+        const fila = boton.closest('tr');
+        fila.remove();
+        actualizarTotalTabla();
+    }
+
+    // Función para actualizar el total de la tabla
+    function actualizarTotalTabla() {
+        let total = 0;
+        const filas = document.querySelectorAll('#cuerpoTabla tr');
+        
+        filas.forEach(fila => {
+            const subtotal = parseFloat(fila.dataset.subtotal);
+            total += subtotal;
+        });
+        
+        document.getElementById('totalTabla').textContent = `$${total.toFixed(2)}`;
+        document.getElementById('totalCompra').value = total.toFixed(2);
+    }
+
+    // Agregar producto cuando se selecciona un producto y cantidad
+    productoSelects.forEach((productoSelect, index) => {
+        productoSelect.addEventListener('change', () => {
+            const producto = productoSelect.value;
+            const cantidad = parseInt(cantidadInputs[index].value) || 0;
+            const presentacion = presentacionSelects[index].value;
+            
+            if (producto !== "Seleccionar" && cantidad > 0) {
+                agregarProductoATabla(producto, cantidad, presentacion);
+            }
+        });
+
+        cantidadInputs[index].addEventListener('input', () => {
+            const producto = productoSelects[index].value;
+            const cantidad = parseInt(cantidadInputs[index].value) || 0;
+            const presentacion = presentacionSelects[index].value;
+            
+            if (producto !== "Seleccionar" && cantidad > 0) {
+                agregarProductoATabla(producto, cantidad, presentacion);
+            }
+        });
+    });
+});
+
+</script>
+{% endblock %}

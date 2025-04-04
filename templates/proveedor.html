@@ -1,0 +1,50 @@
+{% extends "layoutAdministrador.html" %}
+
+{% block content %}
+{% import "_macrosJuan.html" as macro %}
+
+
+   <!-- Tabla de proveedores -->
+<div class="mt-4">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Teléfono</th>
+                <th>Empresa</th>
+                <th>Dirección</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for proveedor in proveedores %}
+            <tr onclick="seleccionarProveedor(this)"
+                data-id="{{ proveedor.idProveedor }}"
+                data-nombre="{{ proveedor.nombreProveedor }}"
+                data-telefono="{{ proveedor.telefono }}"
+                data-empresa="{{ proveedor.empresa }}"
+                data-direccion="{{ proveedor.direccion }}"
+                data-correo="{{ proveedor.correo }}"
+                data-vendedor="{{ proveedor.tipoVendedor }}">
+                <td>{{ proveedor.nombreProveedor }}</td>
+                <td>{{ proveedor.telefono }}</td>
+                <td>{{ proveedor.empresa }}</td>
+                <td>{{ proveedor.direccion }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+
+{% for field, errors in form.errors.items() %}
+    {% for error in errors %}
+        <div class="alert alert-danger">
+            {{ field }}: {{ error }}
+        </div>
+    {% endfor %}
+{% endfor %}
+
+
+{% endblock %}
+

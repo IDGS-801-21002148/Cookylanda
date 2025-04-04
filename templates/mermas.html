@@ -1,0 +1,286 @@
+{% extends "layoutA.html" %}
+
+{% block title %}Mermas{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="../static/css/mermas.css">
+  
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <!-- Formulario -->
+    <div class="form-container">
+        <h2 class="form-title">Registrar Merma</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" id="mermaForm">
+            {{ form.hidden_tag() }}
+
+            <div class="form-group">
+                {{ form.tipoMerma.label }}
+                {{ form.tipoMerma(class="form-control") }}
+                {% if form.tipoMerma.errors %}
+                <div class="text-danger">
+                    {% for error in form.tipoMerma.errors %}
+                    <small>{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.lote.label }}
+                {{ form.lote(class="form-control") }}
+                {% if form.lote.errors %}
+                <div class="text-danger">
+                    {% for error in form.lote.errors %}
+                    <small>{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.cantidadDisponible.label }}
+                {{ form.cantidadDisponible(class="form-control") }}
+            </div>
+
+            <div class="form-group">
+                {{ form.cantidadMerma.label }}
+                {{ form.cantidadMerma(class="form-control") }}
+                {% if form.cantidadMerma.errors %}
+                <div class="text-danger">
+                    {% for error in form.cantidadMerma.errors %}
+                    <small>{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.fechaMerma.label }}
+                {{ form.fechaMerma(class="form-control") }}
+                {% if form.fechaMerma.errors %}
+                <div class="text-danger">
+                    {% for error in form.fechaMerma.errors %}
+                    <small>{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn-registrar">Registrar Merma</button>
+        </form>
+    </div>
+
+    <!-- Campo de búsqueda y tabla -->
+    <div class="table-wrapper">
+        <div class="table-container">
+            <div class="table-header">
+                <h3 class="table-title">Historial de Mermas</h3>
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar por tipo, producto, cantidad o fecha..."
+                        class="search-input">
+                    <button class="search-clear" id="clearSearch" type="button">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="table-scroll">
+                {% if historial_mermas %}
+                <table id="mermasTable">
+                    <thead>
+                        <tr>
+                            <th>Tipo de Merma</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for merma in historial_mermas %}
+                        <tr>
+                            <td>{{ merma.tipoMerma }}</td>
+                            <td>{{ merma.producto }}</td>
+                            <td>{{ "%.2f"|format(merma.cantidadMerma) }}</td>
+                            <!-- Solo cambio en la visualización de la fecha -->
+                            <td>{{ merma.fechaMerma.strftime('%d/%m/%Y') if merma.fechaMerma else 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-records">
+                    No se encontraron registros de mermas
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const clearSearch = document.getElementById('clearSearch');
+        const cantidadMermaField = document.getElementById('cantidadMerma');
+        const form = document.getElementById('mermaForm');
+        
+        // Función para mostrar alertas personalizadas
+        function mostrarAlerta(mensaje) {
+            alert(mensaje); // Puedes reemplazar esto con un modal más elegante si lo prefieres
+        }
+    
+        // Función para actualizar la cantidad disponible
+        function actualizarCantidadDisponible() {
+            const loteSeleccionado = document.getElementById('lote').value;
+            const cantidadDisponibleField = document.getElementById('cantidadDisponible');
+            
+            // Limpiar campo si no hay selección válida
+            if (!loteSeleccionado || loteSeleccionado === "") {
+                cantidadDisponibleField.value = "";
+                cantidadMermaField.step = 'any';
+                return;
+            }
+            
+            if (loteSeleccionado.startsWith('materia_')) {
+                const idProducto = loteSeleccionado.split('_')[1];
+                fetch(`/get_stock_materia/${idProducto}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        cantidadDisponibleField.value = data.cantidad.toFixed(2);
+                        cantidadMermaField.step = 'any';
+                        cantidadMermaField.setAttribute('title', 'Ingrese cantidad (ej. 5, 5.00, 5.25)');
+                    });
+            } else if (loteSeleccionado.startsWith('galleta_')) {
+                const idStock = loteSeleccionado.split('_')[1];
+                fetch(`/get_stock_galleta/${idStock}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        cantidadDisponibleField.value = data.cantidad % 1 === 0 ? parseInt(data.cantidad) : data.cantidad.toFixed(2);
+                        cantidadMermaField.step = 'any';
+                        cantidadMermaField.setAttribute('title', 'Ingrese cantidad entera (ej. 5 o 5.00)');
+                    });
+            }
+        }
+    
+        // Validación en tiempo real del campo cantidad
+        cantidadMermaField.addEventListener('input', function() {
+            const loteSeleccionado = document.getElementById('lote').value;
+            const valor = this.value;
+            
+            if (!loteSeleccionado) return;
+            
+            // Validar números negativos
+            if (valor.startsWith('-')) {
+                mostrarAlerta('No se permiten cantidades negativas');
+                this.value = valor.replace('-', '');
+                return;
+            }
+            
+            // Validación para galletas
+            if (loteSeleccionado.startsWith('galleta_') && valor) {
+                const numero = parseFloat(valor);
+                if (isNaN(numero)) {
+                    mostrarAlerta('Ingrese un número válido');
+                    this.value = '';
+                    return;
+                }
+                
+                // Verificar si es entero o termina en .00
+                if (!Number.isInteger(numero) && !/\.0{1,2}$/.test(valor)) {
+                    mostrarAlerta('Para galletas debe ingresar valores enteros (ej. 5 o 5.00)');
+                    // Auto-corrección a entero
+                    this.value = Math.round(numero);
+                }
+            }
+        });
+    
+        // Validación del formulario
+        form.addEventListener('submit', function(e) {
+            const loteSeleccionado = document.getElementById('lote').value;
+            const cantidadMerma = document.getElementById('cantidadMerma').value;
+            const cantidadDisponible = parseFloat(document.getElementById('cantidadDisponible').value);
+            
+            // Validar selección de lote
+            if (!loteSeleccionado || loteSeleccionado === "") {
+                e.preventDefault();
+                mostrarAlerta('Por favor seleccione un lote válido');
+                return;
+            }
+            
+            // Validar cantidad ingresada
+            if (!cantidadMerma || isNaN(cantidadMerma)) {
+                e.preventDefault();
+                mostrarAlerta('Por favor ingrese una cantidad válida');
+                return;
+            }
+            
+            const cantidad = parseFloat(cantidadMerma);
+            
+            // Validar cantidad positiva
+            if (cantidad <= 0) {
+                e.preventDefault();
+                mostrarAlerta('La cantidad debe ser mayor que cero');
+                return;
+            }
+            
+            // Validar stock disponible
+            if (cantidad > cantidadDisponible) {
+                e.preventDefault();
+                mostrarAlerta(`La cantidad no puede ser mayor al stock disponible (${cantidadDisponible})`);
+                return;
+            }
+            
+            // Validación específica para galletas
+            if (loteSeleccionado.startsWith('galleta_')) {
+                // Convertir a string para verificar formato
+                const cantidadStr = cantidadMerma.toString();
+                if (!Number.isInteger(cantidad) && !cantidadStr.endsWith('.00') && !cantidadStr.endsWith('.0')) {
+                    e.preventDefault();
+                    mostrarAlerta('Para galletas debe ingresar valores enteros (ej. 5 o 5.00)');
+                    return;
+                }
+            }
+        });
+    
+        // Resto del código (búsqueda, limpieza, etc.)
+        searchInput.addEventListener('input', function() {
+            clearSearch.style.display = this.value ? 'block' : 'none';
+        });
+        
+        clearSearch.addEventListener('click', function() {
+            searchInput.value = '';
+            this.style.display = 'none';
+            searchInput.focus();
+            const event = new Event('keyup');
+            searchInput.dispatchEvent(event);
+        });
+    
+        document.getElementById('lote').addEventListener('change', actualizarCantidadDisponible);
+    
+        searchInput.addEventListener('keyup', function() {
+            const input = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#mermasTable tbody tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(input) ? '' : 'none';
+            });
+        });
+    
+        // Inicializar
+        actualizarCantidadDisponible();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "layoutAdministrador.html" %}
+
+{% block content %}
+<div class="modal fade" id="modalMensaje" tabindex="-1" aria-labelledby="modalMensajeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalMensajeLabel">Notificación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="notification-container">
+                    <div class="logo">
+                        <img src="../static/img/Logo (2).png" alt="Logo">
+                    </div>
+                    <div class="message-box">
+                        <p>El lote de galletas <strong id="nombre-galleta"></strong> está por agotarse.</p>
+                        <p>Solo quedan <strong id="cantidad-galleta"></strong> galletas en existencia.</p>
+                    </div>
+                    <form id="mensaje-form" action="{{ url_for('aceptar_notificacion') }}" method="post">
+                        <button type="submit" class="btn btn-success">Aceptar</button>
+                        <input type="hidden" name="id_mensaje" id="id-mensaje">
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

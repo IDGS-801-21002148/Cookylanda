@@ -1,0 +1,98 @@
+
+<!-- ventas macro -->
+{% macro validar_cantidad(field) %}
+<label for="{{ field.id }}" class="form-label"><h2>Cantidad</h2></label>
+<input id="{{ field.id }}" 
+    type="number" 
+    class="form-control mb-2" 
+    placeholder="cantidad" 
+    name="{{ field.name }}" 
+    required 
+    min="1">
+{% if field.errors %}
+    {% for error in field.errors %}
+        <small class="text-danger d-block">{{ error }}</small>
+    {% endfor %}
+{% endif %}
+{% endmacro %}
+
+<!-- Macro para campo de fecha -->
+{% macro validar_fecha(field, requerido=False) %}
+<label for="{{ field.id }}" class="form-label">Fecha de Venta:</label>
+<input id="{{ field.id }}" 
+    type="date" 
+    class="form-control mb-2" 
+    name="{{ field.name }}"
+    {% if requerido %}required{% endif %}>
+{% if field.errors %}
+    {% for error in field.errors %}
+        <small class="text-danger d-block">{{ error }}</small>
+    {% endfor %}
+{% endif %}
+{% endmacro %}
+
+
+<!-- Macro para campo de búsqueda -->
+{% macro campo_busqueda(field) %}
+<div class="input-group w-50 mx-auto">
+    <input id="{{ field.id }}" 
+        type="text" 
+        class="form-control" 
+        placeholder="Buscar ventas..." 
+        name="{{ field.name }}"
+        value="{{ field.data or '' }}">
+    <button class="btn btn-primary" type="submit">
+        <i class="bi bi-search"></i> Buscar
+    </button>
+</div>
+{% if field.errors %}
+    {% for error in field.errors %}
+        <small class="text-danger d-block text-center">{{ error }}</small>
+    {% endfor %}
+{% endif %}
+<small class="text-muted d-block text-center">Solo se permiten letras, números y espacios</small>
+{% endmacro %}
+
+
+<!-- Macro para campo de búsqueda de pedidos -->
+{% macro campo_busqueda_pedidos(field) %}
+<div class="w-100">
+    <input id="{{ field.id }}" 
+        type="text" 
+        class="form-control {% if field.errors %}is-invalid{% endif %}" 
+        placeholder="Buscar por cliente o estado" 
+        name="{{ field.name }}"
+        value="{{ field.data or '' }}"
+        maxlength="50">
+    {% if field.errors %}
+        {% for error in field.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+    {% endif %}
+    <small class="text-muted">Solo se permiten letras, números, espacios y guiones</small>
+</div>
+{% endmacro %}
+
+
+<!-- Macro para cantidad en pedido -->
+
+{% macro validar_cantidad_pedido(field) %}
+<div class="form-group">
+    <label for="{{ field.id }}" class="form-label"><h2>Cantidad</h2></label>
+    <input id="{{ field.id }}" 
+        type="number" 
+        class="form-control mb-2 {% if field.errors %}is-invalid{% endif %}" 
+        placeholder="cantidad" 
+        name="{{ field.name }}"
+        value="{{ field.data or '' }}"
+        required
+        min="1">
+    {% if field.errors %}
+        {% for error in field.errors %}
+            <div class="invalid-feedback" style="display: block; color: red;">
+                {{ error }}
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+{% endmacro %}

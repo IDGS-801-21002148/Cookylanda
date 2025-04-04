@@ -1,0 +1,29 @@
+{% macro input_field(type, name, label, options=None, step=none, extra_attrs={}) %}
+<div class="form-group">
+    <label for="{{ name }}">{{ label }}</label>
+    {% if options and (type == "select" or name.endswith('descripcion')) %}
+        <select class="form-control {% if kwargs.get('is_invalid') %}is-invalid{% endif %}" 
+                name="{{ name }}" id="{{ name }}"
+                {% for attr, value in extra_attrs.items() %}
+                    {{ attr }}="{{ value }}"
+                {% endfor %}>
+            {% for option in options %}
+                {% if option is iterable and option is not string %}
+                    <option value="{{ option[0] }}">{{ option[1] }}</option>
+                {% else %}
+                    <option value="{{ option }}">{{ option }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    {% else %}
+        <input type="{{ type }}" class="form-control {% if kwargs.get('is_invalid') %}is-invalid{% endif %}" 
+               id="{{ name }}" name="{{ name }}"
+               placeholder="{{ label }}"
+               {% if step %}step="{{ step }}"{% endif %}
+               {% for attr, value in extra_attrs.items() %}
+                   {{ attr }}="{{ value }}"
+               {% endfor %}>
+    {% endif %}
+    <div class="invalid-feedback">Este campo es requerido</div>
+</div>
+{% endmacro %}

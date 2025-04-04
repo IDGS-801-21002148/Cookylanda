@@ -1,0 +1,240 @@
+{% extends "layoutA.html" %}
+{% from "_macrosA.html" import input_field, select_field %}
+
+{% block title %}Modificar Receta{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="../static/css/registro.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <!-- Mensajes Flash -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <div class="card card-custom shadow">
+        <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+          <h2 class="mb-0">Modificar Receta</h2>
+          <a href="{{ url_for('catalogoReceta') }}" class="btn btn-sm btn-outline-dark">
+            <i class="bi bi-x-lg"></i>
+          </a>
+        </div>
+        
+        <div class="card-body form-container">
+          <form method="POST" action="{{ url_for('modificar_receta', idReceta=receta.idReceta) }}" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            <!-- Información básica -->
+            <div class="row mb-4">
+              <div class="col-md-6 mb-3">
+                {{ input_field(form.codigoUsuario) }}
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ input_field(form.nombreGalleta) }}
+              </div>
+              <div class="col-md-6">
+                {{ select_field(form.estatus) }}
+              </div>
+            </div>
+            
+            <!-- Ingredientes Base -->
+            <h5 class="form-section-title">Ingredientes Base</h5>
+            
+            <div class="row ingredient-row">
+              <div class="col-md-4 mb-3">
+                {{ select_field(form.cmbHarina) }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ input_field(form.cantHar) }}
+              </div>
+              <div class="col-md-4">
+                {{ select_field(form.cmbHarinaUnidad) }}
+              </div>
+            </div>
+            
+            <div class="row ingredient-row">
+              <div class="col-md-4 mb-3">
+                {{ select_field(form.cmbMantequilla) }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ input_field(form.cantMan) }}
+              </div>
+              <div class="col-md-4">
+                {{ select_field(form.cmbMantUnidad) }}
+              </div>
+            </div>
+            
+            <div class="row ingredient-row">
+              <div class="col-md-4 mb-3">
+                {{ select_field(form.cmbAzucar) }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ input_field(form.cantAzur) }}
+              </div>
+              <div class="col-md-4">
+                {{ select_field(form.cmbAzurUnidad) }}
+              </div>
+            </div>
+            
+            <div class="row ingredient-row">
+              <div class="col-md-4 mb-3">
+                {{ select_field(form.cmbHuevo) }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ input_field(form.cantHuv) }}
+              </div>
+              <div class="col-md-4">
+                {{ select_field(form.cmbHuevUnidad) }}
+              </div>
+            </div>
+            
+            <div class="row ingredient-row">
+              <div class="col-md-4 mb-3">
+                {{ select_field(form.cmbPolvo) }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ input_field(form.cantHor) }}
+              </div>
+              <div class="col-md-4">
+                {{ select_field(form.cmbPolvoUnidad) }}
+              </div>
+            </div>
+            
+            <div class="row ingredient-row">
+              <div class="col-md-4 mb-3">
+                {{ select_field(form.cmbSal) }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ input_field(form.cantSal) }}
+              </div>
+              <div class="col-md-4">
+                {{ select_field(form.cmbSalUnidad) }}
+              </div>
+            </div>
+            
+            <div class="row ingredient-row">
+              <div class="col-md-4 mb-3">
+                {{ select_field(form.cmbLe) }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ input_field(form.cantLech) }}
+              </div>
+              <div class="col-md-4">
+                {{ select_field(form.cmbLecheUnidad) }}
+              </div>
+            </div>
+            
+            <!-- Ingredientes Adicionales -->
+            <h5 class="form-section-title d-flex justify-content-between align-items-center">
+              Ingredientes Adicionales
+              <button type="button" id="agregar-ingrediente" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle"></i> Añadir
+              </button>
+            </h5>
+            
+            <div id="ingredientes-adicionales" class="mb-4">
+              {% if receta.adicional %}
+                {% for i in range(receta.adicional|length) %}
+                <div class="row ingredient-row mb-3">
+                  <div class="col-md-4">
+                    <input type="text" class="form-control" name="adicional[]" 
+                           value="{{ receta.adicional[i] }}" placeholder="Nombre" required>
+                  </div>
+                  <div class="col-md-3">
+                    <input type="text" class="form-control" name="cantAdicional[]" 
+                           value="{{ receta.cantAdicional[i] }}" placeholder="Cantidad" required>
+                  </div>
+                  <div class="col-md-3">
+                    <select name="unidad[]" class="form-select" required>
+                      <option value="Gramos" {% if receta.unidad[i] == 'Gramos' %}selected{% endif %}>Gramos</option>
+                      <option value="Mililitros" {% if receta.unidad[i] == 'Mililitros' %}selected{% endif %}>Mililitros</option>
+                      <option value="Litros" {% if receta.unidad[i] == 'Litros' %}selected{% endif %}>Litros</option>
+                      <option value="Kilos" {% if receta.unidad[i] == 'Kilos' %}selected{% endif %}>Kilos</option>
+                      <option value="Unidades" {% if receta.unidad[i] == 'Unidades' %}selected{% endif %}>Unidades</option>
+                      <option value="Tazas" {% if receta.unidad[i] == 'Tazas' %}selected{% endif %}>Tazas</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2 d-flex align-items-center">
+                    <button type="button" class="btn btn-delete eliminar-ingrediente">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+                {% endfor %}
+              {% else %}
+                <div class="row ingredient-row mb-3">
+                  <div class="col-md-4">
+                    <input type="text" class="form-control" name="adicional[]" placeholder="Nombre" required>
+                  </div>
+                  <div class="col-md-3">
+                    <input type="text" class="form-control" name="cantAdicional[]" placeholder="Cantidad" required>
+                  </div>
+                  <div class="col-md-3">
+                    <select name="unidad[]" class="form-select" required>
+                      <option value="Gramos">Gramos</option>
+                      <option value="Mililitros">Mililitros</option>
+                      <option value="Litros">Litros</option>
+                      <option value="Kilos">Kilos</option>
+                      <option value="Unidades">Unidades</option>
+                      <option value="Tazas">Tazas</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2 d-flex align-items-center">
+                    <button type="button" class="btn btn-delete eliminar-ingrediente">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Procedimiento -->
+            <div class="mb-4">
+              {{ input_field(form.procedimiento) }}
+            </div>
+            
+            <!-- Imagen -->
+            <div class="mb-4">
+              <label class="form-label">Imagen de la receta</label>
+              <input type="file" name="imagen" class="form-control">
+              {% if receta.imagen %}
+                <div class="mt-2">
+                  <small class="text-muted">Imagen actual:</small>
+                  <img src="data:image/jpeg;base64,{{ receta.imagen }}" class="img-preview d-block mt-2">
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Botones de acción -->
+            <div class="d-flex justify-content-between mt-4">
+              <button type="submit" class="btn btn-submit">
+                <i class="bi bi-save"></i> Guardar Cambios
+              </button>
+              <a href="{{ url_for('catalogoReceta') }}" class="btn btn-cancel">
+                <i class="bi bi-x-circle"></i> Cancelar
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="../static/js/modificarReceta.js"></script>
+{% endblock %}

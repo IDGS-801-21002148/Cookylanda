@@ -1,0 +1,129 @@
+{% extends "layoutYolis.html" %}
+
+
+{% block container %}
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-center mb-4"> 
+        <img src="../static/img/Logo (2).png" alt="Logo" class="img-fluid" style="max-width: 150px;"> 
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="shadow p-4 mb-4 bg-secondary-subtle rounded">
+                <div class="container">
+                    <div class="content">
+                        <h2 class="text-center mb-4">Detalle de la Venta</h2>
+                        
+                        <table class="table table-bordered">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Galleta</th>
+                                    <th>Modalidad</th>
+                                    <th>Cantidad</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if ventas %}
+                                    {% for venta in ventas %}
+                                    <tr>
+                                        <td>{{ venta.galleta }}</td>
+                                        <td>{{ venta.modalidad }}</td>
+                                        <td>{{ venta.cantidad }}</td>
+                                        <td>${{ "%.2f"|format(venta.subtotal) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No hay datos de venta</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                        
+                        <div class="text-end mt-4">
+                            <h3>Total a pagar: ${{ "%.2f"|format(total) }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-3">
+    <!-- Formulario para imprimir/guardar -->
+    <form id="ventaForm" method="POST" action="{{ url_for('guardar_venta_db') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="button" id="btnImprimir" class="btn btn-warning btn-lg fw-bold text-light">Imprimir</button>
+        <a href="{{ url_for('ventas') }}" class="btn btn-info btn-lg fw-bold text-light ms-2">Regresar a Ventas</a>
+    </form>
+</div>
+
+<!-- Modal para código de usuario -->
+<div class="modal fade" id="usuarioModal" tabindex="-1" aria-labelledby="usuarioModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="usuarioModalLabel">Registrar Venta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="mensajeError" class="alert alert-danger d-none"></div>
+                <form id="codigoForm">
+                    <div class="mb-3">
+                        <label for="codigoUsuario" class="form-label">Código de Empleado *</label>
+                        <input type="text" class="form-control" id="codigoUsuario" required
+                                placeholder="Ingrese su código de vendedor/administrador">
+                        <small class="text-muted">Solo personal autorizado puede registrar ventas</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnGuardar" class="btn btn-primary">Guardar Venta</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Asegúrate de incluir jQuery y Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Mostrar modal al hacer clic en Imprimir
+        $('#btnImprimir').click(function() {
+            $('#codigoUsuario').val(''); // Limpiar campo
+            $('#mensajeError').addClass('d-none'); // Ocultar mensaje de error
+            var usuarioModal = new bootstrap.Modal(document.getElementById('usuarioModal'));
+            usuarioModal.show();
+        });
+    
+        // Guardar al hacer clic en el botón Guardar del modal
+        $('#btnGuardar').click(function() {
+            const codigo = $('#codigoUsuario').val().trim();
+            const mensajeError = $('#mensajeError');
+            
+            mensajeError.addClass('d-none');
+            
+            if (!codigo) {
+                mensajeError.text('Debe ingresar un código de empleado').removeClass('d-none');
+                return;
+            }
+    
+            // Agregar el código al formulario y enviar
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'codigoUsuario',
+                value: codigo
+            }).appendTo('#ventaForm');
+            
+            $('#ventaForm').submit();
+        });
+    });
+</script>
+
+{% endblock %}

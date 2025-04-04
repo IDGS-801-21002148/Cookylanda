@@ -1,0 +1,105 @@
+{% extends "layoutAdministrador.html" %}
+
+{% block content %}
+{% import "_macrosJuan.html" as macro %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
+<div class="container mt-5">
+    <h1 class="text-center header">COMPRAS</h1>
+    <!-- <button type="button" class="buttonAG" onclick="window.location.href='/registroCompra'">Seguir comprando</button> -->
+
+    <!-- Tabla de compras -->
+<div class="mt-4">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Fecha Compra</th>
+                <th>Proveedor</th>
+                <th>Total</th>
+                <th>Detalle Compra</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for compra in compras %}
+            <tr>
+                <td>{{ compra.fechaCompra }}</td>
+                <td>{{ compra.proveedor_nombre }}</td>  <!-- Mostrar nombre en lugar de ID -->
+                <td>${{ "%.2f"|format(compra.total) }}</td>  <!-- Formato monetario -->
+                <td>
+                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#detalleModal" 
+                            onclick="mostrarDetalles({{ loop.index }})">
+                        Ver Detalles
+                    </button>
+                    <ul id="detalles-{{ loop.index }}" style="display: none;">
+                        {% for detalle in compra.detalles %}
+                        <li>{{ detalle.nombreProducto }} - {{ detalle.cantidad }} ({{ detalle.presentacion }})</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal para mostrar los detalles -->
+<div class="modal fade" id="detalleModal" tabindex="-1" aria-labelledby="detalleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detalleModalLabel">Detalles de la Compra</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul id="detallesModalBody"></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para manejar el modal -->
+<script>
+    function mostrarDetalles(index) {
+        // Obtener la lista de detalles oculta
+        const detalles = document.getElementById(`detalles-${index}`).innerHTML;
+
+        // Insertar los detalles en el modal
+        document.getElementById('detallesModalBody').innerHTML = detalles;
+    }
+</script>
+
+<!-- Modal para mostrar los detalles -->
+<div class="modal fade" id="detalleModal" tabindex="-1" aria-labelledby="detalleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detalleModalLabel">Detalles de la Compra</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul id="detallesModalBody"></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para manejar el modal -->
+<script>
+    function mostrarDetalles(index) {
+        // Obtener la lista de detalles oculta
+        const detalles = document.getElementById(`detalles-${index}`).innerHTML;
+
+        // Insertar los detalles en el modal
+        document.getElementById('detallesModalBody').innerHTML = detalles;
+    }
+</script>
+</div>
+
+
+{% endblock %}

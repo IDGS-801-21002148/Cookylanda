@@ -1,0 +1,153 @@
+{% extends "layoutYolis.html" %}
+{% from "_macrosYolanda.html" import validar_cantidad_pedido %} 
+
+
+{% block container %}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="shadow p-4 mb-4 bg-transparent rounded">
+                <h2 class="tituloCarritoPedido">Realizar pedido para cliente</h2>
+                <form method="POST" action="{{ url_for('pedido_ventas') }}" novalidate >
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="shadow p-4 mb-4 bg-body rounded">
+                                <h2>Galletas</h2>
+                                <label for="galleta" class="form-label">Selecciona la galleta:</label>
+                                <select class="form-select" name="galleta" id="galleta" required>
+                                    {% for galleta in galletas %}
+                                        <option value="{{ galleta }}">{{ galleta }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="shadow p-4 mb-4 bg-body rounded">
+                                <h2>Modalidad</h2>
+                                <select class="form-select" name="modalidad" id="modalidad" required>
+                                    <option value="Caja Chica (4 galletas)">Caja Chica (4 galletas)</option>
+                                    <option value="Caja Grande (12 galletas)">Caja Grande (12 galletas)</option>
+                                    <option value="Medio Kilo (20 galletas)">Medio Kilo (20 galletas)</option>
+                                    <option value="Kilo completo (40 galletas)">Kilo completo (40 galletas)</option>
+                                    <option value="suelta">Suelta</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center" style="width: 32%;">
+                        {{ validar_cantidad_pedido(form.cantidad) }}  
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button type="submit" name="agregar" class="btn iconoGalleta">
+                            <img src="../static/img/agregar.png" alt="Botón agregar producto" />
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="shadow p-4 mb-4 bg-transparent rounded">
+                <div class="shadow p-4 mb-4 bg-body rounded">
+                    <h2>Detalle del pedido</h2>
+                    
+                    <form method="POST" action="{{ url_for('pedido_ventas') }}" id="pedidoDetalleForm" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                        <div class="mb-3">
+                            <label for="usuario_id" class="form-label">Cliente:</label>
+                            <select class="form-control" name="usuario_id" id="usuario_id" required>
+                                <option value="">Selecciona un cliente</option> 
+                                {% for usuario in usuarios %}
+                                    <option value="{{ usuario.idUsuario }}">{{ usuario.nombreCompleto }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="fecha_pedido" class="form-label">Fecha del pedido:</label>
+                            <input type="date" class="form-control" name="fecha_pedido" id="fecha_pedido" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="fecha_entrega" class="form-label">Fecha de entrega:</label>
+                            <input type="date" class="form-control" name="fecha_entrega" id="fecha_entrega" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="anticipo" class="form-label">Anticipo:</label>
+                            <input type="number" class="form-control" name="anticipo" id="anticipo" value="0" min="0" step="0.01" required>
+                        </div>
+                        
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nombre Galleta</th>
+                                    <th>Modalidad</th>
+                                    <th>Cantidad</th>
+                                    <th>Subtotal (MXN)</th>
+                                    <th>Resto a pagar (MXN)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in carrito %}
+                                <tr>
+                                    <td>{{ item.galleta }}</td>
+                                    <td>{{ item.modalidad }}</td>
+                                    <td>{{ item.cantidad }}</td>
+                                    <td>${{ "%.2f"|format(item.subtotal) }}</td>
+                                    <td>${{ "%.2f"|format(item.subtotal) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        
+                        <h4 class="text-end">Total: ${{ "%.2f"|format(total) }}</h4>
+                        
+                        <div class="d-flex justify-content-between mt-3">
+                            <button type="submit" name="eliminarGalleta" class="btn btn-danger">
+                                Eliminar Última
+                            </button>
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmarPedidoModal">
+                                Finalizar pedido
+                            </button>
+                        </div>
+                        <button type="submit" name="finalizarPedido" id="finalizarPedidoButton" style="display: none;">Confirmar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmarPedidoModal" tabindex="-1" aria-labelledby="confirmarPedidoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmarPedidoModalLabel">Confirmar pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas registrar este pedido para el cliente?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="confirmarPedido">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('confirmarPedido').addEventListener('click', function() {
+        document.getElementById('finalizarPedidoButton').click();
+    });
+</script>
+    
+{% endblock %}
