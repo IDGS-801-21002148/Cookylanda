@@ -4,8 +4,15 @@
 {% block container %}
 
 <div class="container mt-5">
-    <h2 class="text-center mb-4">Historial de Pedidos {% if session.get('usuario_nombre') %}({{ session.usuario_nombre }}){% endif %}</h2>
-        
+    <h2 class="text-center mb-4">
+        Historial de Pedidos 
+        {% if usuario %}
+        <span class="text-success">({{ usuario.nombreCompleto }})</span>
+        {% elif session.get('usuario_nombre') %}
+        <span class="text-success">({{ session.usuario_nombre }})</span>
+        {% endif %}
+    </h2>
+
     {% if not pedidos_con_detalle %}
         <div class="alert alert-info text-center">
             No tienes pedidos registrados

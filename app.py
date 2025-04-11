@@ -75,7 +75,7 @@ csrf = CSRFProtect(app)                   #----------------ANDREA
 app.config['SECRET_KEY'] = 'tu_clave_secreta_aqui'  # Clave secreta para CSRF y sesiones
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'root'
+app.config['MYSQL_PASSWORD'] = 'alejandro.com13'
 app.config['MYSQL_DB'] = 'cookylanda'
 
 mysql = MySQL(app)
@@ -264,7 +264,7 @@ def before_request():
     if current_user.is_authenticated:
         # Renovar la sesión
         session.permanent = True
-        app.permanent_session_lifetime = timedelta(minutes=10)
+        app.permanent_session_lifetime = timedelta(minutes=40)
         session.modified = True
 
 # Definir rutas después de que 'app' esté definido
@@ -379,13 +379,23 @@ def vendedor():
 @login_required
 @roles_required('Cocinero', 'Administrador')
 def recetas():
-    return render_template('principalA.html')     #----------------------------------CAMBIE AQUI ANDREA 
+
+    # Obtener todos los registros de stock de galletas
+    stock_galletas = StockGalletas.query.order_by(StockGalletas.nombreGalleta).all()
+    
+    # Calcular días restantes hasta caducidad
+    hoy = date.today()
+    for galleta in stock_galletas:
+        dias_restantes = (galleta.fechaPreparacion + timedelta(days=14) - hoy).days
+        galleta.dias_restantes = max(0, dias_restantes)  # No mostrar números negativos
+    return render_template('principalA.html', stock_galletas=stock_galletas)     #----------------------------------CAMBIE AQUI ANDREA 
+    
 
 @app.route('/a')
 @login_required
 @roles_required('Administrador')
 def ad():
-    return render_template('principalAdmin.html')     #----------------------------------CAMBIE AQUI ANDREA 
+    return render_template('principalAdmin.html')   #----------------------------------CAMBIE AQUI ANDREA 
 
 
 
@@ -445,60 +455,122 @@ def catalogo():
 
 @app.route('/admin', methods=['GET', 'POST'])
 @login_required
-@roles_required('Administrador')  # Solo el rol 'Administrador' puede acceder
+@roles_required('Administrador')
 def admin():
+    cursor = mysql.connection.cursor() # Abrir cursor al inicio de la función
+
     if request.method == 'POST':
-        nombreCompleto = request.form['nombreCompleto']
-        apePaterno = request.form['apePaterno']
-        apeMaterno = request.form['apeMaterno']
-        usuario = request.form['usuario']
-        contrasenia = generate_password_hash(request.form['contrasenia'])
-        correo = request.form['correo']
-        rol = request.form['rol']
+        # --- CREAR USUARIO ---
+        nombreCompleto = request.form.get('nombreCompleto', '').strip()
+        apePaterno = request.form.get('apePaterno', '').strip()
+        apeMaterno = request.form.get('apeMaterno', '').strip()
+        usuario_form = request.form.get('usuario', '').strip() # Renombrar para evitar conflicto
+        contrasenia_plain = request.form.get('contrasenia', '').strip()
+        correo = request.form.get('correo', '').strip()
+        rol = request.form.get('rol', '').strip()
 
-        # Generar el código de usuario
+        # Validaciones básicas (puedes añadir más)
+        if not all([nombreCompleto, apePaterno, apeMaterno, usuario_form, contrasenia_plain, correo, rol]):
+            flash("Todos los campos son requeridos.", "error")
+            # Obtener usuarios para mostrar la tabla incluso si hay error en POST
+            cursor.execute("SELECT * FROM usuario ORDER BY idUsuario DESC")
+            usuarios_tuplas = cursor.fetchall()
+            cursor.close()
+            usuarios = _mapear_usuarios(usuarios_tuplas)
+            return render_template('admin.html', usuarios=usuarios)
+
+        mensaje_error_pass = validar_contraseña(contrasenia_plain)
+        if mensaje_error_pass:
+             flash(mensaje_error_pass, "error")
+             cursor.execute("SELECT * FROM usuario ORDER BY idUsuario DESC")
+             usuarios_tuplas = cursor.fetchall()
+             cursor.close()
+             usuarios = _mapear_usuarios(usuarios_tuplas)
+             return render_template('admin.html', usuarios=usuarios)
+
+        # Verificar si usuario o correo ya existen
+        cursor.execute("SELECT idUsuario FROM usuario WHERE usuario = %s", (usuario_form,))
+        if cursor.fetchone():
+            flash(f"El nombre de usuario '{usuario_form}' ya está en uso.", "error")
+            cursor.execute("SELECT * FROM usuario ORDER BY idUsuario DESC")
+            usuarios_tuplas = cursor.fetchall()
+            cursor.close()
+            usuarios = _mapear_usuarios(usuarios_tuplas)
+            return render_template('admin.html', usuarios=usuarios)
+
+        cursor.execute("SELECT idUsuario FROM usuario WHERE correo = %s", (correo,))
+        if cursor.fetchone():
+            flash(f"El correo electrónico '{correo}' ya está registrado.", "error")
+            cursor.execute("SELECT * FROM usuario ORDER BY idUsuario DESC")
+            usuarios_tuplas = cursor.fetchall()
+            cursor.close()
+            usuarios = _mapear_usuarios(usuarios_tuplas)
+            return render_template('admin.html', usuarios=usuarios)
+
+        # Hashear contraseña y generar código
+        contrasenia_hash = generate_password_hash(contrasenia_plain)
         codigoUsuario = generar_codigo_usuario(rol)
+        estatus = 'Activo' # Estado inicial
+        ahora = datetime.now() # Fecha/hora actual
 
-        cursor = mysql.connection.cursor()
         try:
             cursor.execute(
-                "INSERT INTO usuario (nombreCompleto, apePaterno, apeMaterno, usuario, contrasenia, correo, rol, codigoUsuario) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                (nombreCompleto, apePaterno, apeMaterno, usuario, contrasenia, correo, rol, codigoUsuario)
+                """INSERT INTO usuario
+                   (nombreCompleto, apePaterno, apeMaterno, usuario, contrasenia, correo, rol, estatus, codigoUsuario, ultimo_cambio_contrasenia)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (nombreCompleto, apePaterno, apeMaterno, usuario_form, contrasenia_hash, correo, rol, estatus, codigoUsuario, ahora)
             )
             mysql.connection.commit()
             flash("Usuario creado exitosamente.", "success")
         except Exception as e:
             mysql.connection.rollback()
             flash(f"Error al crear el usuario: {str(e)}", "error")
+            app.logger.error(f"Error DB al crear usuario: {e}") # Log del error
         finally:
-            cursor.close()
-        return redirect(url_for('admin'))  # Redirige de vuelta a la página de administración
+            # No cerrar el cursor aquí si lo necesitamos para el GET
+            pass # Se cerrará al final del bloque GET
 
-    cursor = mysql.connection.cursor()
-    cursor.execute("SELECT * FROM usuario")
-    usuarios_tuplas = cursor.fetchall()
+        return redirect(url_for('admin'))  # Redirigir siempre después de POST exitoso
 
-    # Asignar explícitamente los valores de las tuplas a los campos del modelo Usuario
-    usuarios = [
-        Usuario(
-            idUsuario=usuario[0], 
-            nombreCompleto=usuario[1], 
-            apePaterno=usuario[2], 
-            apeMaterno=usuario[3], 
-            usuario=usuario[4], 
-            contrasenia=usuario[5], 
-            correo=usuario[6], 
-            rol=usuario[7], 
-            estatus=usuario[8], 
-            codigoUsuario=usuario[9], 
-            intentos_fallidos=usuario[10], 
-            bloqueado_hasta=usuario[11], 
-            ultimo_cambio_contrasenia=usuario[12], 
-            ultimo_inicio_sesion=usuario[13]
-        ) for usuario in usuarios_tuplas
-    ]
-    cursor.close()
+    # --- OBTENER USUARIOS (GET) ---
+    try:
+        cursor.execute("SELECT * FROM usuario ORDER BY idUsuario DESC") # Ordenar por ID descendente
+        usuarios_tuplas = cursor.fetchall()
+        usuarios = _mapear_usuarios(usuarios_tuplas) # Usar función helper
+    except Exception as e:
+        flash(f"Error al cargar usuarios: {str(e)}", "error")
+        app.logger.error(f"Error DB al obtener usuarios: {e}") # Log del error
+        usuarios = []
+    finally:
+        cursor.close() # Cerrar cursor después de usarlo
+
     return render_template('admin.html', usuarios=usuarios)
+
+# Función helper para mapear tuplas a objetos Usuario (si decides usar el objeto)
+# O simplemente para devolver diccionarios si prefieres
+def _mapear_usuarios(usuarios_tuplas):
+    usuarios = []
+    if usuarios_tuplas:
+        for u in usuarios_tuplas:
+            # Opción 1: Crear objeto Usuario (asegúrate que coincida con _init_)
+            # usuario_obj = Usuario(
+            #     idUsuario=u[0], nombreCompleto=u[1], apePaterno=u[2], apeMaterno=u[3],
+            #     usuario=u[4], contrasenia=u[5], correo=u[6], rol=u[7], estatus=u[8],
+            #     codigoUsuario=u[9], intentos_fallidos=u[10], bloqueado_hasta=u[11],
+            #     ultimo_cambio_contrasenia=u[12], ultimo_inicio_sesion=u[13]
+            # )
+            # usuarios.append(usuario_obj)
+
+            # Opción 2: Devolver diccionarios (más simple si no necesitas métodos del objeto)
+             usuarios.append({
+                 'idUsuario': u[0], 'nombreCompleto': u[1], 'apePaterno': u[2], 'apeMaterno': u[3],
+                 'usuario': u[4], 'correo': u[6], 'rol': u[7], 'estatus': u[8],
+                 'codigoUsuario': u[9]
+                 # No incluir contraseña hash en lo que se pasa a la plantilla
+             })
+    return usuarios
+
+
 
 
 
@@ -506,40 +578,123 @@ def admin():
 @login_required
 @roles_required('Administrador')
 def editar_usuario(id):
-    if current_user.rol != 'Administrador':
-        flash("No tienes permisos para realizar esta acción.", "error")
-        return redirect(url_for('ventas'))
-    
-    cursor = mysql.connection.cursor()
-    if request.method == 'POST':
-        nombreCompleto = request.form['nombreCompleto']
-        apePaterno = request.form['apePaterno']
-        apeMaterno = request.form['apeMaterno']
-        usuario = request.form['usuario']
-        correo = request.form['correo']
+    cursor = None # Inicializar cursor a None
+    try:
+        # Usar DictCursor para fácil acceso a los datos por nombre de columna
+        cursor = mysql.connection.cursor(pymysql.cursors.DictCursor)
 
-        try:
-            cursor.execute(
-                "UPDATE usuario SET nombreCompleto = %s, apePaterno = %s, apeMaterno = %s, usuario = %s, correo = %s WHERE idUsuario = %s",
-                (nombreCompleto, apePaterno, apeMaterno, usuario, correo, id)
-            )
-            mysql.connection.commit()
-            flash("Usuario actualizado exitosamente.", "success")
-        except Exception as e:
-            mysql.connection.rollback()
-            flash(f"Error al actualizar el usuario: {str(e)}", "error")
-        finally:
+        # Primero, obtener los datos actuales del usuario SIEMPRE, tanto para GET como para POST (antes de validar)
+        cursor.execute("SELECT * FROM usuario WHERE idUsuario = %s", (id,))
+        usuario_data = cursor.fetchone()
+
+        # Si el usuario no existe (ni para GET ni para POST)
+        if not usuario_data:
+            flash("Usuario no encontrado.", "error")
+            # No hay cursor que cerrar aquí si fetchone falla inicialmente, pero por si acaso
+            if cursor and cursor.connection and not getattr(cursor, 'closed', True): cursor.close()
+            return redirect(url_for('admin'))
+
+        # --- Lógica para POST (Actualizar) ---
+        if request.method == 'POST':
+            nombreCompleto = request.form.get('nombreCompleto', '').strip()
+            apePaterno = request.form.get('apePaterno', '').strip()
+            apeMaterno = request.form.get('apeMaterno', '').strip()
+            usuario_form = request.form.get('usuario', '').strip()
+            correo = request.form.get('correo', '').strip()
+            nuevo_rol = request.form.get('rol', '').strip()
+            estatus = request.form.get('estatus', 'Activo').strip()
+
+            # Validaciones básicas
+            if not all([nombreCompleto, apePaterno, apeMaterno, usuario_form, correo, nuevo_rol, estatus]):
+                flash("Todos los campos son requeridos.", "error")
+                # Ya tenemos usuario_data, simplemente renderizamos la plantilla de nuevo
+                return render_template('editar_usuario.html', usuario=usuario_data)
+
+            # Verificar si el nuevo usuario o correo (si cambiaron) ya existen en OTRO usuario
+            cursor.execute("SELECT idUsuario FROM usuario WHERE usuario = %s AND idUsuario != %s", (usuario_form, id))
+            if cursor.fetchone():
+                flash(f"El nombre de usuario '{usuario_form}' ya está en uso por otro usuario.", "error")
+                return render_template('editar_usuario.html', usuario=usuario_data)
+
+            cursor.execute("SELECT idUsuario FROM usuario WHERE correo = %s AND idUsuario != %s", (correo, id))
+            if cursor.fetchone():
+                flash(f"El correo electrónico '{correo}' ya está registrado por otro usuario.", "error")
+                return render_template('editar_usuario.html', usuario=usuario_data)
+
+            # --- Lógica para actualizar codigoUsuario ---
+            original_rol = usuario_data['rol'] # Usamos los datos ya cargados
+            original_codigo = usuario_data['codigoUsuario']
+            codigo_final_usuario = original_codigo
+
+            if nuevo_rol != original_rol:
+                print(f"Detectado cambio de rol para ID {id}: de '{original_rol}' a '{nuevo_rol}'")
+                if nuevo_rol in ['Administrador', 'Cocinero', 'Vendedor']:
+                    codigo_final_usuario = generar_codigo_usuario(nuevo_rol)
+                    print(f"Nuevo código generado: {codigo_final_usuario}")
+                else:
+                    codigo_final_usuario = None
+                    print("Nuevo rol no requiere código, estableciendo a NULL.")
+            # --- Fin Lógica codigoUsuario ---
+
+            # Intentar la actualización
+            try:
+                cursor.execute(
+                    """UPDATE usuario SET
+                       nombreCompleto = %s, apePaterno = %s, apeMaterno = %s,
+                       usuario = %s, correo = %s, rol = %s, estatus = %s,
+                       codigoUsuario = %s
+                       WHERE idUsuario = %s""",
+                    (nombreCompleto, apePaterno, apeMaterno, usuario_form, correo, nuevo_rol, estatus,
+                     codigo_final_usuario, id)
+                )
+                mysql.connection.commit()
+                flash("Usuario actualizado exitosamente.", "success")
+                # Cerrar cursor y redirigir DESPUÉS del commit exitoso
+                if cursor and cursor.connection and not getattr(cursor, 'closed', True): cursor.close()
+                return redirect(url_for('admin'))
+
+            except pymysql.err.IntegrityError as ie:
+                mysql.connection.rollback()
+                if "Duplicate entry" in str(ie) and "codigoUsuario" in str(ie):
+                    flash(f"Error: El código de usuario generado ('{codigo_final_usuario}') ya existe. Intenta guardar de nuevo.", "error")
+                    app.logger.error(f"Error de integridad (codigoUsuario duplicado?) al editar usuario {id}: {ie}")
+                else:
+                    flash(f"Error de base de datos al actualizar: {str(ie)}", "error")
+                    app.logger.error(f"Error DB Integrity al editar usuario {id}: {ie}")
+                # Renderizar de nuevo el formulario con el error
+                return render_template('editar_usuario.html', usuario=usuario_data)
+
+            except Exception as e:
+                mysql.connection.rollback()
+                flash(f"Error inesperado al actualizar el usuario: {str(e)}", "error")
+                app.logger.error(f"Error inesperado al editar usuario {id}: {e}")
+                # Renderizar de nuevo el formulario con el error
+                return render_template('editar_usuario.html', usuario=usuario_data)
+
+        # --- Lógica para GET (Mostrar Formulario) ---
+        else: # request.method == 'GET'
+            # Ya tenemos usuario_data cargado al principio
+            return render_template('editar_usuario.html', usuario=usuario_data)
+
+    except Exception as e:
+        # Captura errores generales (ej: error de conexión)
+        flash(f"Error general en la operación de edición: {str(e)}", "error")
+        app.logger.error(f"Error general en editar_usuario (ID: {id}): {e}")
+        # Asegurarse de cerrar el cursor si se abrió
+        if cursor and cursor.connection and not getattr(cursor, 'closed', True): cursor.close()
+        return redirect(url_for('admin')) # Redirigir en caso de error grave
+
+    finally:
+        # Asegurarse de que el cursor SIEMPRE se cierre si se abrió y no se cerró antes
+        if cursor and cursor.connection and not getattr(cursor, 'closed', True):
+            print(f"Cerrando cursor en finally para ID {id}") # Debug
             cursor.close()
-        return redirect(url_for('administrador'))
-    
-    cursor.execute("SELECT * FROM usuario WHERE idUsuario = %s", (id,))
-    usuario = cursor.fetchone()
-    cursor.close()
-    return render_template('editar_usuario.html', usuario=usuario)
+
+
+
+
 
 @app.route('/registro', methods=['GET', 'POST'])
-@login_required
-@roles_required('Administrador')
 def registro():
     if request.method == 'POST':
         # Verificar si el usuario ya completó el formulario y está en la fase de validación del token
@@ -689,25 +844,35 @@ def administrador():
 
 
 
-# Ruta para eliminar usuarios (solo administrador)
 @app.route('/eliminar_usuario/<int:id>', methods=['POST'])
 @login_required
+@roles_required('Administrador') # Asegurar rol aquí también
 def eliminar_usuario(id):
-    if current_user.rol != 'Administrador':
-        flash("No tienes permisos para realizar esta acción.", "error")
-        return redirect(url_for('ventas'))
-    
+    # Impedir que el administrador se elimine a sí mismo
+    if id == current_user.id:
+        flash("No puedes eliminar tu propia cuenta de administrador.", "error")
+        return redirect(url_for('admin'))
+
     cursor = mysql.connection.cursor()
     try:
-        cursor.execute("DELETE FROM usuario WHERE idUsuario = %s", (id,))
-        mysql.connection.commit()
-        flash("Usuario eliminado exitosamente.", "success")
+        # Verificar si el usuario existe antes de intentar eliminar
+        cursor.execute("SELECT idUsuario FROM usuario WHERE idUsuario = %s", (id,))
+        if cursor.fetchone():
+            cursor.execute("DELETE FROM usuario WHERE idUsuario = %s", (id,))
+            mysql.connection.commit()
+            flash("Usuario eliminado exitosamente.", "success")
+        else:
+            flash("El usuario que intentas eliminar no existe.", "warning")
+
     except Exception as e:
         mysql.connection.rollback()
-        flash(f"Error al eliminar el usuario: {str(e)}", "error")
+        # Podría fallar por restricciones de clave foránea si el usuario tiene registros asociados
+        flash(f"Error al eliminar el usuario: {str(e)}. Verifica si tiene registros asociados.", "error")
+        app.logger.error(f"Error DB al eliminar usuario {id}: {e}")
     finally:
         cursor.close()
-    return redirect(url_for('administrador'))
+
+    return redirect(url_for('admin')) # Redirigir al panel principal
 
 
 # Cargar contraseñas inseguras
@@ -749,9 +914,9 @@ def get_stock_galleta(id_stock):
     })
 
 
-@app.route("/jshjdar", methods=["GET", "POST"])
+@app.route("/mermas", methods=["GET", "POST"])
 @login_required
-@roles_required('Cocinero', 'Administrador') 
+@roles_required('Cocinero', 'Administrator') 
 def mermas():
     if 'user' not in session:
         session['user'] = 'default_user'
@@ -789,7 +954,7 @@ def mermas():
             tipo_merma = form.tipoMerma.data
             lote_seleccionado = form.lote.data
             cantidad_str = form.cantidadMerma.data
-            fecha = form.fechaMerma.data or datetime.now().date()  # Solo fecha sin hora
+            fecha = form.fechaMerma.data or datetime.now().date()
             
             # Convertir la cantidad a Decimal de manera segura
             try:
@@ -799,7 +964,6 @@ def mermas():
                 return redirect(url_for("mermas"))
             
             producto_nombre = ""
-            id_inventario = None
             error_ocurrido = False
             
             # Procesar MATERIA PRIMA
@@ -810,10 +974,8 @@ def mermas():
                 if materia:
                     cantidad_materia = Decimal(str(materia.cantidad))
                     if cantidad_materia >= cantidad:
-                        # Aceptar cualquier número válido para materia prima
                         materia.cantidad = float(cantidad_materia - cantidad)
                         producto_nombre = materia.nombreProducto
-                        id_inventario = materia.idProducto
                     else:
                         flash("La cantidad excede el stock disponible de materia prima", "danger")
                         error_ocurrido = True
@@ -825,30 +987,22 @@ def mermas():
             elif lote_seleccionado.startswith("galleta_"):
                 id_stock = int(lote_seleccionado.split("_")[1])
                 galleta = db.session.get(StockGalletas, id_stock)
-                #galleta = StockGalletas.query.get(id_stock)
-                 
                 
                 if galleta:
                     cantidad_galletas = Decimal(str(galleta.cantidadPiezas))
                     if cantidad_galletas >= cantidad:
-                        # Validar que sea entero o termine en .00
                         cantidad_str = str(cantidad)
                         if '.' in cantidad_str:
-                            # Verificar si son decimales .00
                             decimal_part = cantidad_str.split('.')[1]
                             if decimal_part != '00' and decimal_part != '0':
                                 flash("Para galletas debe ingresar valores enteros (ej. 10 o 10.00)", "danger")
                                 error_ocurrido = True
                             else:
-                                # Aceptar 10.00 como válido
                                 galleta.cantidadPiezas = int(float(cantidad_galletas - cantidad))
                                 producto_nombre = galleta.nombreGalleta
-                                id_inventario = galleta.idStock
                         else:
-                            # Aceptar enteros
                             galleta.cantidadPiezas = int(float(cantidad_galletas - cantidad))
                             producto_nombre = galleta.nombreGalleta
-                            id_inventario = galleta.idStock
                     else:
                         flash("La cantidad excede el stock disponible de galletas", "danger")
                         error_ocurrido = True
@@ -867,8 +1021,7 @@ def mermas():
                     producto=producto_nombre,
                     cantidadMerma=float(cantidad),
                     fechaMerma=fecha,
-                    codigoUsuario=session['user'],
-                    idInventario=id_inventario
+                    codigoUsuario=session['user']
                 )
                 
                 db.session.add(nueva_merma)
@@ -1011,7 +1164,7 @@ def registro_receta():
                     except ValueError:
                         flash(f"Valor numérico inválido en cantidad: {c}", "danger")
                         
-             # Actualizar listas
+            # Actualizar listas
             lista_adicionales = [ing[0] for ing in ingredientes_validos]
             lista_cantidades = [ing[1] for ing in ingredientes_validos]
             lista_unidades = [ing[2] for ing in ingredientes_validos]
@@ -1059,14 +1212,31 @@ def registro_receta():
             )
 
             try:
+                # Guardar la receta
                 db.session.add(nueva_receta)
+                db.session.flush()  # Para obtener el ID de la receta recién insertada
+
+                # Crear la galleta asociada
+                nueva_galleta = Galletas(
+                    nombre=form.nombreGalleta.data,
+                    descripcion=f"Receta de {form.nombreGalleta.data}",
+                    precioUnitario=float(form.precioUnitario.data)
+                )
+                db.session.add(nueva_galleta)
+                
+                # Actualizar el diccionario de precios
+                PRECIOS_GALLETAS[form.nombreGalleta.data] = float(form.precioUnitario.data)
+                
+                # Confirmar todas las operaciones
                 db.session.commit()
-                flash("Receta registrada exitosamente", "success")
+
+                flash("Receta y galleta registradas exitosamente", "success")
                 return redirect(url_for('catalogoReceta'))
+                
             except Exception as e:
                 db.session.rollback()
-                print("Error al guardar en la base de datos:", str(e))
-                flash("Error al registrar la receta", "danger")
+                print("Error al guardar:", str(e))
+                flash("Error al registrar la receta y galleta", "danger")
         else:
             print("Errores de validación:", form.errors)
 
@@ -1086,7 +1256,7 @@ def verificar_usuario():
     try:
         # Ejecutar consulta SQL directa
         cursor.execute(
-            "SELECT * FROM usuario WHERE codigoUsuario = %s AND rol = 'Cocinero'", 
+            "SELECT * FROM usuario WHERE codigoUsuario = %s AND (rol = 'Cocinero' OR rol = 'Administrador')", 
             (codigoUsuario,)
         )
         usuario_data = cursor.fetchone()
@@ -1228,9 +1398,62 @@ def sanitize_input(value):
         return value
     return ""
 
+#VERIFICACIÓN DE JUAN ------------------------------------------------------------------
+import sqlite3  # o el conector de tu base de datos
+
+# Función para verificar usuario
+def verificar_usuario(codigo):
+    """Verifica si el código de usuario existe y tiene rol válido"""
+    try:
+        # Usa las mismas credenciales que en DevelopmentConfig
+        connection = pymysql.connect(
+            host='127.0.0.1',  # Cambiado de 'localhost' a '127.0.0.1'
+            user='root',       # Cambiado a 'root'
+            password='alejandro.com13',   # Cambiado a 'root'
+            database='cookylanda',
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT rol FROM usuario WHERE codigoUsuario = %s", (codigo,))
+            resultado = cursor.fetchone()
+            
+        connection.close()
+        
+        if resultado and resultado['rol'] in ['Cocinero', 'Administrador']:
+            return True
+        return False
+        
+    except Exception as e:
+        print(f"Error al verificar usuario: {e}")
+        return False
+    
+# Ruta para verificación AJAX
+@app.route('/verificar_codigo/<codigo>')
+def verificar_codigo(codigo):
+    if verificar_usuario(codigo):
+        return jsonify({'valido': True})
+    return jsonify({
+        'valido': False,
+        'mensaje': 'Acceso denegado - Código inválido o sin permisos suficientes'
+    })
+
+# Decorador para verificación de autorización
+def requiere_autorizacion(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if request.method == 'POST':
+            codigo_usuario = request.form.get('codigoUsuario')
+            if not verificar_usuario(codigo_usuario):
+                flash('Acceso denegado: Código inválido o sin permisos suficientes', 'danger')
+                return redirect(request.referrer or url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 @app.route('/materia', methods=['GET', 'POST'])
 @login_required
-@roles_required('Administrador')
+@roles_required('Administrador','Cocinero')
 def materia():
     # Diccionario de unidades por producto
     unidades_por_producto = {
@@ -1289,12 +1512,14 @@ def compra():
         compras_serializadas.append(compra_dict)
 
     return render_template("compra.html",
-                         compras=compras_serializadas, 
-                         proveedores=proveedores_options)
+                            compras=compras_serializadas, 
+                            proveedores=proveedores_options)
+
 
 @app.route('/registroCompra', methods=['GET', 'POST'])
 @login_required
 @roles_required('Administrador')
+@requiere_autorizacion
 def registroCompra():
     form = CompraForm()
     compras = Compra.query.all()
@@ -1407,6 +1632,7 @@ def registroCompra():
 @app.route('/registroProveedores', methods=['GET', 'POST'])
 @login_required
 @roles_required('Administrador')
+@requiere_autorizacion
 def registroProveedores():
     form = ProveedorForm()
     proveedores = Proveedor.query.filter_by(estatus='Activo').all()
@@ -1631,32 +1857,24 @@ def notificaciones_produccion():
 @login_required
 @roles_required('Cocinero', 'Administrador')
 def produccion_cocina():
-    # Consulta para obtener recetas activas con su stock
+    # Consulta optimizada para evitar duplicados
+    subquery = db.session.query(
+        StockGalletas.nombreGalleta,
+        func.max(StockGalletas.cantidadPiezas).label('max_cantidad')
+    ).group_by(StockGalletas.nombreGalleta).subquery()
+
     recetas = db.session.query(
         Receta,
-        StockGalletas.cantidadPiezas
+        subquery.c.max_cantidad
     ).outerjoin(
-        StockGalletas, StockGalletas.nombreGalleta == Receta.nombreGalleta
-    ).filter(Receta.estatus == "Activo").all()
+        subquery, Receta.nombreGalleta == subquery.c.nombreGalleta
+    ).filter(
+        Receta.estatus == "Activo"
+    ).all()
 
-    # Verificación completa de todos los ingredientes
-    for receta, cantidadPiezas in recetas:
-        print("\n" + "="*50)
-        print(f"Receta: {receta.nombreGalleta}")
-        print(f"Stock: {cantidadPiezas if cantidadPiezas is not None else 'N/A'}")
-        print("\nIngredientes Principales:")
-        print(f"- {receta.harIng}: {receta.cantHar or 'Sin cantidad'}")  # Harina
-        print(f"- {receta.manIng}: {receta.cantMan or 'Sin cantidad'}")  # Mantequilla
-        print(f"- {receta.azurIng}: {receta.cantAzur or 'Sin cantidad'}")  # Azúcar
-        print(f"- {receta.huvrIng}: {receta.cantHuv or 'Sin cantidad'}")  # Huevo
-        print(f"- {receta.horIng}: {receta.cantHor or 'Sin cantidad'}")  # Polvo para hornear
-        print(f"- {receta.salIng}: {receta.cantSal or 'Sin cantidad'}")  # Sal
-        print(f"- {receta.LechIng}: {receta.cantLech or 'Sin cantidad'}")  # Leche
-        print("\nIngrediente Adicional:")
-        print(f"- {receta.adicional}: {receta.cantAdicional or 'Sin cantidad'}")
-        print("\nProcedimiento:")
-        print(receta.procedimiento[:100] + "...")  # Muestra solo los primeros 100 caracteres
-        print("="*50 + "\n")
+    # Verificación de datos (opcional)
+    for receta, cantidad in recetas:
+        print(f"\nReceta: {receta.nombreGalleta} - Stock: {cantidad}")
 
     return render_template("produccion_cocina.html", recetas=recetas)
 
@@ -1689,7 +1907,6 @@ def nueva_receta():
 
 #PRODUCCIÓN --------------------------------------------------------------------
 @app.route('/producir_galletas', methods=['POST','GET'])
-@login_required
 @roles_required('Cocinero', 'Administrador')
 def producir_galletas():
     try:
@@ -2087,11 +2304,12 @@ def agregar_pedido():
 #pedido del modulo del cliente
 @app.route("/pedidoCliente", methods=["GET", "POST"])
 @login_required
-@roles_required( 'Cliente')
+@roles_required('Cliente')
 def carrito_compras():
-    galletas = StockGalletas.query.with_entities(StockGalletas.nombreGalleta).all()
+    galletas = Galletas.query.with_entities(Galletas.nombre).all()
     galletas = [g[0] for g in galletas]
-    usuarios = Usuario.query.filter_by(estatus='Activo').all()
+    usuario_actual = Usuario.query.get(current_user.id)
+
     
     form = PedidoForm()  # Sin pasar request.form aquí
     carrito = leer_pedidos()
@@ -2210,7 +2428,7 @@ def carrito_compras():
     return render_template("carritoCompras.html",
                             form=form,
                             galletas=galletas,
-                            usuarios=usuarios,
+                            usuario_actual=usuario_actual,
                             carrito=carrito,
                             total=total)
 
@@ -2219,29 +2437,36 @@ def carrito_compras():
 @login_required
 @roles_required('Cliente')
 def listado_pedidos():
-    # Obtener el ID del usuario de la sesión
-    usuario_id = session.get('usuario_id')
-    
-    if not usuario_id:
-        flash("No se ha identificado al cliente", "error")
+    try:
+        usuario = Usuario.query.get(current_user.id)
+        if not usuario:
+            flash("No se encontró la información del cliente", "error")
+            return redirect(url_for("index"))
+
+        pedidos = Pedido.query.filter_by(idUsuario=usuario.idUsuario)\
+                                .order_by(Pedido.fechaApartado.desc())\
+                                .all()
+
+        pedidos_con_detalle = []
+        for pedido in pedidos:
+            detalles = DetallePedido.query.filter_by(idPedido=pedido.idPedido).all()
+            pedidos_con_detalle.append({
+                'pedido': pedido,
+                'detalles': detalles,
+                'galletas': [Galletas.query.get(detalle.idGalleta) for detalle in detalles]
+            })
+
+        return render_template(
+            "listadoPedidos.html",
+            pedidos_con_detalle=pedidos_con_detalle,
+            usuario=usuario,
+            format_date=lambda d: d.strftime('%d/%m/%Y') if d else ''
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        flash("Error al cargar el historial de pedidos", "error")
         return redirect(url_for("index"))
-    
-    # Obtener los pedidos del usuario
-    pedidos = Pedido.query.filter_by(idUsuario=usuario_id).order_by(Pedido.fechaApartado.desc()).all()
-    
-    # Obtener los detalles de cada pedido
-    pedidos_con_detalle = []
-    for pedido in pedidos:
-        detalles = DetallePedido.query.filter_by(idPedido=pedido.idPedido).all()
-        pedidos_con_detalle.append({
-            'pedido': pedido,
-            'detalles': detalles,
-            'galletas': [Galletas.query.get(detalle.idGalleta) for detalle in detalles]
-        })
-    
-    return render_template("listadoPedidos.html", 
-                            pedidos_con_detalle=pedidos_con_detalle,
-                            format_date=lambda d: d.strftime('%d/%m/%Y') if d else '')
 
 @app.route("/cancelar_Historico/<int:pedido_id>", methods=["POST"])
 @login_required
@@ -2275,7 +2500,7 @@ def cancelar_historico(pedido_id):
 
 @app.route("/dashboard")
 @login_required
-@roles_required('Administrador')
+@roles_required('Administrador','Vendedor')
 def dashboard():
     # 1. Ventas del día
     hoy = datetime.now().date()
@@ -2378,6 +2603,54 @@ VENTAS_FILE = "ventas.txt"
 TICKET_FILE = "ticket.txt"
 SOLICITUDES_FILE = "solicitud.txt"
 
+
+#NOTIFICACIÓN JUAN ----------------------------------------------------------------------
+#file pedido
+SOLICITUDES_FILE = "solicitud.txt"
+@app.route('/mostrar_notificacionesJ')
+def mostrar_notificacionesJ():
+    # Obtener el stock de galletas para la tabla principal
+    stock_galletas = StockGalletas.query.order_by(StockGalletas.nombreGalleta).all()
+    hoy = date.today()
+    for galleta in stock_galletas:
+        dias_restantes = (galleta.fechaPreparacion + timedelta(days=14) - hoy).days
+        galleta.dias_restantes = max(0, dias_restantes)
+    
+    # Leer las solicitudes existentes
+    solicitudes = []
+    if os.path.exists(SOLICITUDES_FILE):
+        with open(SOLICITUDES_FILE, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        mensaje, estado = line.split('|')
+                        solicitudes.append({'mensaje': mensaje, 'estado': estado})
+                    except:
+                        continue
+    
+    return render_template("produccion_cocina.html", 
+                        stock_galletas=stock_galletas,
+                        mostrar_modal_notificaciones=True,
+                        solicitudes=solicitudes)
+
+@app.route('/eliminar_solicitud/<int:index>', methods=['POST'])
+def eliminar_solicitud(index):
+    # Leer todas las solicitudes
+    if os.path.exists(SOLICITUDES_FILE):
+        with open(SOLICITUDES_FILE, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        # Eliminar la línea correspondiente al índice
+        if 0 <= index < len(lines):
+            lines.pop(index)
+            
+            # Escribir las líneas restantes de vuelta al archivo
+            with open(SOLICITUDES_FILE, 'w', encoding='utf-8') as f:
+                f.writelines(lines)
+    
+    return redirect(url_for('mostrar_notificacionesJ'))
+
 # Precios de las galletas
 PRECIOS_GALLETAS = {
     "Galleta de Arándano": 12,
@@ -2449,9 +2722,18 @@ def calcular_total():
     total = sum(venta["subtotal"] for venta in ventas)
     return total
 
+
+
+
 def calcular_subtotal(galleta, modalidad, cantidad):
     try:
-        precio = PRECIOS_GALLETAS.get(galleta, 0)
+        # Consultar el precio de la galleta desde la base de datos
+        galleta_db = Galletas.query.filter_by(nombre=galleta).first()
+        if not galleta_db:
+            flash(f"No se encontró el precio para {galleta}", "error")
+            return 0
+            
+        precio = float(galleta_db.precioUnitario)
         cantidad = int(cantidad)
         
         if modalidad == "suelta":
@@ -2461,7 +2743,10 @@ def calcular_subtotal(galleta, modalidad, cantidad):
             return precio * cantidad_galletas * cantidad
     except Exception as e:
         print(f"Error al calcular subtotal: {e}")
+        flash("Error al calcular el subtotal", "error")
         return 0
+
+
 
 def guardar_ticket(ventas, total, fecha_venta=None):
     with open(TICKET_FILE, "w", encoding='utf-8') as f:
@@ -2482,7 +2767,7 @@ def guardar_ticket(ventas, total, fecha_venta=None):
 @login_required
 @roles_required('Vendedor', 'Administrador')
 def ventas():
-    galletas = StockGalletas.query.with_entities(StockGalletas.nombreGalleta).all()
+    galletas = StockGalletas.query.filter(StockGalletas.cantidadPiezas > 0).with_entities(StockGalletas.nombreGalleta).all()
     galletas = [g[0] for g in galletas]
     
     form = VentaForm(request.form)
@@ -3079,15 +3364,20 @@ def detalle_venta(id_venta):
             'subtotal': float(detalle.subtotal)
         } for detalle in detalles]
     })
+    
+@app.route('/')
+@login_required
+def welcome():
+    return render_template('welcome.html')
 
 #con esta funcion el vendedor puede levantar un pedido como cliente 
 @app.route("/pedidoVentas", methods=["GET", "POST"])
 @login_required
 @roles_required('Vendedor', 'Administrador')
 def pedido_ventas():
-    galletas = StockGalletas.query.with_entities(StockGalletas.nombreGalleta).all()
+    galletas = Galletas.query.with_entities(Galletas.nombre).all()
     galletas = [g[0] for g in galletas]
-    usuarios = Usuario.query.filter_by(estatus='Activo').all()
+    usuarios = Usuario.query.filter_by(estatus='Activo', rol='Cliente').all()
     
     form = PedidoForm()
     carrito = leer_pedidos()
@@ -3192,7 +3482,7 @@ def pedido_ventas():
                 f.write("")
             
             flash("Pedido realizado con éxito", "success")
-            return redirect(url_for("listado_pedidos"))
+            return redirect(url_for("pedido_ventas"))
     
     return render_template("pedidos.html",
                                 form=form,

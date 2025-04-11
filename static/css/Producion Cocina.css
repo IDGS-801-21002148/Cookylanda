@@ -206,6 +206,11 @@ img {
 
 /*----------------------------------------------------------------------*/
 
+/* Añade margen superior al contenedor de las cards */
+.container {
+    margin-top: 90px; /* Ajusta este valor según necesites */
+}
+
 /* Estilos generales del card */
 .card {
     border-radius: 15px;
@@ -213,6 +218,8 @@ img {
     background-color: #E7DED3; /* Fondo uniforme del card */
     color: #582E32; /* Ajuste del color del texto */
 }
+
+
 
 /* Estilo para el contenido interno del card */
 .card .card-body {
@@ -246,6 +253,10 @@ img {
 .btn-warning:hover {
     background-color: #e0a800; /* Cambiar color al pasar el cursor */
 }
+
+
+
+
 
 /* Indicadores de estado en el card */
 .status-indicator {
@@ -348,4 +359,76 @@ h1 {
 
 .status-circle.bg-danger {
     background-color: #dc3545; /* Rojo: bajo stock */
+}
+
+
+
+
+
+
+
+
+
+
+
+/* Estilo para el contenedor del botón de notificaciones */
+.btn-left {
+    display: inline-block;
+    padding: 8px; /* Aumenté el padding */
+    background-color: transparent;
+    border: none;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    width: 50px;  /* Aumenté el tamaño del contenedor */
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 70px; /* Lo mueve más a la izquierda */
+}
+
+/* Estilo para la imagen dentro del botón */
+.btn-left img {
+    width: 32px;  /* Aumenté el tamaño de la imagen */
+    height: 32px;
+    object-fit: contain;
+}
+
+/* Efecto hover */
+.btn-left:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+/* Estilo para el contenedor principal */
+.d-flex.justify-content-between.mb-3 {
+    padding: 0 15px;
+    margin-left: -5px; /* Mueve todo el contenedor un poco a la izquierda */
+}
+
+/* Estilo alternativo para botón flotante */
+#notificaciones {
+    position: fixed;
+    top: 15px;
+    left: 1300px; /* Reduje el espacio izquierdo para moverlo más a la izquierda */
+    z-index: 1000;
+    background-color: #f8f9fa;
+    border-radius: 50%;
+    width: 70px; /* Aumenté el tamaño */
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+#notificaciones img {
+    width: 62px; /* Aumenté el tamaño */
+    height: 62px;
+}
+
+#notificaciones:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
 }

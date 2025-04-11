@@ -63,9 +63,8 @@ class Merma(db.Model):
     
     idMerma = db.Column(db.Integer, primary_key=True, autoincrement=True)
     tipoMerma = db.Column(db.Enum(
-       'Caducidad Materia Prima' ,'Caducidad Materia Prima', 'Caducidad Galletas', 'Quemado', 'Galletas rotas', 'Pérdidas por manipulación'
+        'Caducidad Materia Prima', 'Caducidad Galletas', 'Quemado', 'Galletas rotas', 'Pérdidas por manipulación'
     ), nullable=False)
-    idInventario = db.Column(db.Integer, nullable=True)
     cantidadMerma = db.Column(db.Numeric(10, 2), nullable=False)
     fechaMerma = db.Column(db.DateTime, default=db.func.current_timestamp())
     lote = db.Column(db.String(50), nullable=True)
@@ -209,7 +208,8 @@ class Pedido(db.Model):
     anticipo = db.Column(db.Numeric(10, 2), nullable=False)
     totalApagar = db.Column(db.Numeric(10, 2), nullable=False)
     
-    #usuario = db.relationship('usuario')
+    usuario = db.relationship('Usuario', backref='pedidos')
+
 
 class DetallePedido(db.Model):
     __tablename__ = 'detallePedido'

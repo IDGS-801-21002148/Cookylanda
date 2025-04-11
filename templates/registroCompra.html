@@ -25,7 +25,7 @@
             <div class="col-md-4">
                 <div class="form-group">
                     <label for="cantidad">Unidades por presentación</label>
-                    <input type="number" class="form-control" name="cantidad[]" id="cantidad" placeholder="Cantidad" min="1">
+                    <input type="number" class="form-control" name="cantidad[]" id="cantidad" placeholder="Cantidad" min="1" disabled>
                 </div>
             </div>
 
@@ -66,7 +66,7 @@
                 </div>
         </div>
         <div class="text-center mt-3">
-            <button type="button" class="buttonAG" id="agregarATabla">Agregar a tabla</button>
+            <button type="button" class="buttonAg" id="agregarATabla">Agregar a tabla</button>
         </div>
         
         <!-- Tabla de productos seleccionados -->
@@ -119,65 +119,43 @@
 
     };
 
-    function actualizarCantidad() {
-        const presentaciones = document.querySelectorAll('select[name="presentacion[]"]');
-        const cantidades = document.querySelectorAll('input[name="cantidad[]"]');
+    // Elimina la función actualizarCantidad() anterior y usa esta versión mejorada
+function configurarCantidadPorPresentacion() {
+    const presentacionSelect = document.getElementById('presentacion');
+    const cantidadInput = document.getElementById('cantidad');
 
-        presentaciones.forEach((select, index) => {
-            select.addEventListener('change', function () {
-                const seleccion = select.value;
-                const cantidadInput = cantidades[index];
+    // Configurar estado inicial
+    cantidadInput.disabled = true;
+    cantidadInput.readOnly = true;
 
-                // Asignar la cantidad según la presentación
-                if (cantidadPorPresentacion[seleccion]) {
-                    cantidadInput.value = cantidadPorPresentacion[seleccion];
-                } else {
-                    cantidadInput.value = '';  // Dejar vacío si no hay valor asignado
-                }
-            });
-        });
-    }
-
-    // Llamar la función al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
-        actualizarCantidad();
+    presentacionSelect.addEventListener('change', function() {
+        if (this.value && this.value !== "Seleccionar") {
+            cantidadInput.disabled = false;
+            cantidadInput.readOnly = true;
+            
+            // Asignar cantidad automática basada en la presentación
+            if (cantidadPorPresentacion[this.value]) {
+                cantidadInput.value = cantidadPorPresentacion[this.value];
+            } else {
+                cantidadInput.value = '';
+            }
+        } else {
+            cantidadInput.disabled = true;
+            cantidadInput.value = '';
+        }
     });
+}
+
+// Llamar la función al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    configurarCantidadPorPresentacion();
+});
 </script>
 
 
-<!-- Script para SweetAlert2 -->
+
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-    function confirmarAccion(action) {
-        Swal.fire({
-            title: "Ingrese el código de usuario",
-            input: "text",
-            inputPlaceholder: "Código de usuario",
-            showCancelButton: true,
-            confirmButtonText: "Confirmar",
-            cancelButtonText: "Cancelar",
-            inputValidator: (value) => {
-                if (!value) {
-                    return "Debe ingresar el código de usuario";
-                }
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById("codigoUsuario").value = result.value;
-                document.getElementById("actionType").value = action;
-                
-                let inputAccion = document.createElement("input");
-                inputAccion.type = "hidden";
-                inputAccion.name = action;
-                inputAccion.value = "1";
-                document.getElementById("compraForm").appendChild(inputAccion);
-
-                document.getElementById("compraForm").submit();
-            }
-        });
-    }
-</script>
-
 <script>
 
     const productoSelects = document.querySelectorAll('select[name="producto[]"]');
@@ -564,45 +542,63 @@ function confirmarAccion(action) {
         title: "Código de usuario",
         input: "text",
         showCancelButton: true,
-        confirmButtonText: "Confirmar",
+        confirmButtonText: "Verificar",
         cancelButtonText: "Cancelar",
         inputValidator: (value) => !value && "Debe ingresar el código"
     }).then((result) => {
         if (result.isConfirmed) {
-            // Limpiar campos ocultos previos
-            document.querySelectorAll('[name^="productos["]').forEach(el => el.remove());
-            
-            // Agregar productos como campos ocultos (limpiando las unidades)
-            filas.forEach((fila, index) => {
-                const celdas = fila.querySelectorAll('td');
-                const producto = celdas[0].textContent;
-                
-                // Extraer solo el valor numérico de la cantidad (eliminar unidades entre paréntesis)
-                const cantidadTexto = celdas[1].textContent;
-                const cantidad = cantidadTexto.split(' (')[0].trim();
-                
-                const presentacion = celdas[2].textContent;
-                
-                agregarCampoOculto('productos', index, 'producto', producto);
-                agregarCampoOculto('productos', index, 'cantidad', cantidad);
-                agregarCampoOculto('productos', index, 'presentacion', presentacion);
-            });
-            
-            document.getElementById("codigoUsuario").value = result.value;
-            document.getElementById("actionType").value = action;
-            
-            // Restablecer el campo de proveedor
-            proveedorSelect.disabled = false;
-            proveedorSelect.classList.remove('proveedor-bloqueado');
-            proveedorBloqueado = false;
-            
-            const inputAccion = document.createElement("input");
-            inputAccion.type = "hidden";
-            inputAccion.name = action;
-            inputAccion.value = "1";
-            document.getElementById("compraForm").appendChild(inputAccion);
-            
-            document.getElementById("compraForm").submit();
+            // Primero verificar el código con el servidor
+            fetch(`/verificar_codigo/${result.value}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.valido) {
+                        // Código válido, proceder con el envío
+                        document.querySelectorAll('[name^="productos["]').forEach(el => el.remove());
+                        
+                        filas.forEach((fila, index) => {
+                            const celdas = fila.querySelectorAll('td');
+                            const producto = celdas[0].textContent;
+                            const cantidadTexto = celdas[1].textContent;
+                            const cantidad = cantidadTexto.split(' (')[0].trim();
+                            const presentacion = celdas[2].textContent;
+                            
+                            agregarCampoOculto('productos', index, 'producto', producto);
+                            agregarCampoOculto('productos', index, 'cantidad', cantidad);
+                            agregarCampoOculto('productos', index, 'presentacion', presentacion);
+                        });
+                        
+                        document.getElementById("codigoUsuario").value = result.value;
+                        document.getElementById("actionType").value = action;
+                        
+                        proveedorSelect.disabled = false;
+                        proveedorSelect.classList.remove('proveedor-bloqueado');
+                        proveedorBloqueado = false;
+                        
+                        const inputAccion = document.createElement("input");
+                        inputAccion.type = "hidden";
+                        inputAccion.name = action;
+                        inputAccion.value = "1";
+                        document.getElementById("compraForm").appendChild(inputAccion);
+                        
+                        document.getElementById("compraForm").submit();
+                    } else {
+                        // Mostrar modal de error
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Acceso denegado',
+                            text: data.mensaje || 'Código inválido o sin permisos suficientes',
+                            confirmButtonText: 'Entendido'
+                        });
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de conexión',
+                        text: 'No se pudo verificar el código',
+                        confirmButtonText: 'Entendido'
+                    });
+                });
         }
     });
 }
@@ -628,7 +624,7 @@ productoSelects.forEach((productoSelect, index) => {
         }
     });
 
-    cantidadInputs[index].addEventListener('input', () => {
+    cantidadInputs[index].addEventListener('blur', () => {
         const producto = productoSelects[index].value;
         const cantidad = parseInt(cantidadInputs[index].value) || 0;
         const presentacion = presentacionSelects[index].value;
@@ -831,6 +827,69 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+
+document.getElementById('agregarATabla').addEventListener('click', function() {
+    const producto = document.querySelector('select[name="producto[]"]').value;
+    const cantidad = parseFloat(document.getElementById('cantidad').value) || 0;
+    const presentacion = document.querySelector('select[name="presentacion[]"]').value;
+    
+    // Validaciones
+    if (producto === "Seleccionar") {
+        Swal.fire('Error', 'Por favor seleccione un producto', 'error');
+        return;
+    }
+    
+    if (isNaN(cantidad) || cantidad <= 0) {
+        Swal.fire('Error', 'La cantidad debe ser un número mayor que cero', 'error');
+        return;
+    }
+    
+    if (presentacion === "Seleccionar") {
+        Swal.fire('Error', 'Por favor seleccione una presentación', 'error');
+        return;
+    }
+    
+    // Agregar a la tabla
+    agregarProductoATabla(producto, cantidad, presentacion);
+    
+    // Limpiar campos
+    document.querySelector('select[name="producto[]"]').value = "Seleccionar";
+    document.getElementById('cantidad').value = "";
+    document.querySelector('select[name="presentacion[]"]').value = "Seleccionar";
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const presentacionSelect = document.getElementById('presentacion');
+        const cantidadInput = document.getElementById('cantidad');
+    
+        // Deshabilitar cantidad inicialmente
+        cantidadInput.disabled = true;
+    
+        // Manejar cambio en la presentación
+        presentacionSelect.addEventListener('change', function() {
+            if (this.value && this.value !== "Seleccionar") {
+                // Habilitar el campo de cantidad pero hacerlo de solo lectura
+                cantidadInput.disabled = false;
+                cantidadInput.readOnly = true;
+                
+                // Asignar la cantidad según la presentación
+                const seleccion = this.value;
+                if (cantidadPorPresentacion[seleccion]) {
+                    cantidadInput.value = cantidadPorPresentacion[seleccion];
+                } else {
+                    cantidadInput.value = '';
+                }
+            } else {
+                // Si no hay presentación seleccionada, deshabilitar cantidad
+                cantidadInput.disabled = true;
+                cantidadInput.value = '';
+            }
+        });
+    });
+
+
+});
+
 
 </script>
 {% endblock %}

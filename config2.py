@@ -10,5 +10,5 @@ class Config(object):
     
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:root@localhost/cookylanda'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:alejandro.com13@127.0.0.1/cookylanda'
     SQLALCHEMY_TRACK_MODIFICATIONS = False

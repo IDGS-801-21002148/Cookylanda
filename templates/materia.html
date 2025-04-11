@@ -28,7 +28,11 @@
                     {% if materia.cantidad == 0 %}
                         <span class="text-danger">AGOTADO</span>
                     {% else %}
-                        {{ "%.3f"|format(materia.cantidad) }} <span class="text-muted">{{ materia.unidad }}</span>
+                        {% if materia.nombreProducto|lower == "huevo" %}
+                            {{ "%d"|format(materia.cantidad|int) }} <span class="text-muted">{{ materia.unidad }}</span>
+                        {% else %}
+                            {{ "%.3f"|format(materia.cantidad) }} <span class="text-muted">{{ materia.unidad }}</span>
+                        {% endif %}
                     {% endif %}
                 </td>
             </tr>

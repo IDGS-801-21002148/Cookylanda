@@ -16,45 +16,24 @@
         <nav class="main-menu">
             <ul>
                 <li>
-                    <a href="">
-                        <img src="../static/img/casa.png" alt="Menu" class="nav-icon-img menu-icon">
-                        <span class="nav-text">Menu</span>
-                    </a>
+                    <a href="{{ url_for('recetas') }}">
+                        <img src="{{ url_for('static', filename='img/casa.png') }}" alt="Menu" class="nav-icon-img menu-icon">
+                       <span class="nav-text">Menu</span>
+                    </a> 
                 </li>
+
                 <li class="has-subnav">
-                    <a href="#">
-                        <img src="../static/img/Ventas.png" alt="Ventas" class="nav-icon-img ventas-icon">
-                        <span class="nav-text">Ventas</span>
-                    </a>
-                </li>
-                <li class="has-subnav">
-                    <a href="#">
+                    <a href="produccion_cocina">
                         <img src="../static/img/inventario.png" alt="Producción" class="nav-icon-img produccion-icon">
                         <span class="nav-text">Producción</span>
                     </a>
                 </li>
                 <li class="has-subnav">
-                    <a href="#">
-                        <img src="../static/img/recetas.png" alt="Recetas" class="nav-icon-img recetas-icon">
+              
+                    <a href="{{ url_for('catalogoReceta') }}" target="_blank" class="receta-icon">
+    
+                        <img src="../static/img/recetas.png" alt="Receta" class="nav-icon-img recetas-icon">
                         <span class="nav-text">Recetas</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="Recetas.html">
-                        <img src="../static/img/iconoganancias.png" alt="Dashboard" class="nav-icon-img dashboard-icon">
-                        <span class="nav-text">Dashboard</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="/registroProveedores">
-                        <img src="../static/img/proveedor.png" alt="Proveedores" class="nav-icon-img proveedores-icon">
-                        <span class="nav-text">Proveedores</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="/registroCompra">
-                        <img src="../static/img/compras.png" alt="Compras" class="nav-icon-img compras-icon">
-                        <span class="nav-text">Compras</span>
                     </a>
                 </li>
                 <li>
@@ -64,19 +43,13 @@
                     </a>
                 </li>
                 <li>
-                    <a href="">
-                        <img src="../static/img/Merma.png" alt="Mermas" class="nav-icon-img mermas-icon">
-                        <span class="nav-text">Mermas</span>
+                    <a href="{{ url_for('mermas') }}">
+                        <img src="../static/img/Merma.png" alt="Merma" class="nav-icon-img dashboard-icon">
+                        <span class="nav-text">Merma</span>
                     </a>
                 </li>
                 <li>
-                    <a href="">
-                        <img src="../static/img/agregarUsuario.png" alt="Crear Usuario" class="nav-icon-img crear-usuario-icon">
-                        <span class="nav-text">Crear Usuario</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="">
+                    <a href="{{ url_for('logout') }}">
                         <img src="../static/img/cerrar sesion.png" alt="Cerrar Sesión" class="nav-icon-img cerrar-sesion-icon">
                         <span class="nav-text">Cerrar Sesión</span>
                     </a>

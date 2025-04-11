@@ -128,15 +128,16 @@ html, body {
 /* Ícono de Recetas */
 .nav-icon-img.recetas-icon {
     width: 60px;
-    margin-left: 0; /* Elimina márgenes negativos */
-    margin-right: 15px; /* Espaciado consistente */
+    margin-left: -10px; /* Movido más a la izquierda */
+    margin-right: 15px;
 }
 
 /* Ícono de Caducidades */
-.nav-icon-img.recetas-icon {
+.nav-icon-img.caducidades-icon, 
+.nav-icon-img.cadu-icon {
     width: 50px;
-    margin-left: 0; /* Elimina márgenes negativos */
-    margin-right: 15px; /* Espaciado consistente */
+    margin-left: -10px;
+    margin-right: 15px;
 }
 
 
@@ -163,6 +164,7 @@ html, body {
 /* Ícono de Mermas */
 .nav-icon-img.mermas-icon {
     width: 50px;
+    margin-left: -10px; /* Movido más a la izquierda */
 }
 
 /* Ícono de Crear Usuario */

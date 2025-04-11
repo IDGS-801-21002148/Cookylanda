@@ -1,73 +1,106 @@
-{% extends 'base.html' %}
+{% extends "layoutAdministrador.html" %}
 
 {% block title %}Editar Usuario{% endblock %}
 
-{% block body %}
-<div class="min-h-screen bg-[#d1bfa3] flex justify-center items-center p-4">
-    <div class="bg-[#e6d9c3] p-8 rounded-lg w-full max-w-2xl">
-        <!-- Logo -->
-        <img
-            src="{{ url_for('static', filename='img/logo.png') }}"
-            alt="Logo"
-            class="mb-8 w-32 mx-auto"
-        />
-        <!-- Título -->
-        <h1 class="text-2xl font-bold text-[#5e3a2e] mb-6 text-center">Editar Usuario</h1>
-        <!-- Formulario -->
-        <form method="POST" action="{{ url_for('editar_usuario', id=usuario[0]) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="grid grid-cols-1 gap-4">
-                <!-- Nombre completo -->
-                <input
-                    class="bg-[#e6d9c3] p-3 rounded-lg text-[#5e3a2e] placeholder-[#5e3a2e] w-full border border-[#5e3a2e] focus:outline-none focus:ring-2 focus:ring-[#5e3a2e]"
-                    placeholder="Nombre completo"
-                    type="text"
-                    name="nombreCompleto"
-                    value="{{ usuario[1] }}"
-                    required
-                />
-                <!-- Apellido paterno -->
-                <input
-                    class="bg-[#e6d9c3] p-3 rounded-lg text-[#5e3a2e] placeholder-[#5e3a2e] w-full border border-[#5e3a2e] focus:outline-none focus:ring-2 focus:ring-[#5e3a2e]"
-                    placeholder="Apellido paterno"
-                    type="text"
-                    name="apePaterno"
-                    value="{{ usuario[2] }}"
-                    required
-                />
-                <!-- Apellido materno -->
-                <input
-                    class="bg-[#e6d9c3] p-3 rounded-lg text-[#5e3a2e] placeholder-[#5e3a2e] w-full border border-[#5e3a2e] focus:outline-none focus:ring-2 focus:ring-[#5e3a2e]"
-                    placeholder="Apellido materno"
-                    type="text"
-                    name="apeMaterno"
-                    value="{{ usuario[3] }}"
-                    required
-                />
-                <!-- Usuario -->
-                <input
-                    class="bg-[#e6d9c3] p-3 rounded-lg text-[#5e3a2e] placeholder-[#5e3a2e] w-full border border-[#5e3a2e] focus:outline-none focus:ring-2 focus:ring-[#5e3a2e]"
-                    placeholder="Usuario"
-                    type="text"
-                    name="usuario"
-                    value="{{ usuario[4] }}"
-                    required
-                />
-                <!-- Correo electrónico -->
-                <input
-                    class="bg-[#e6d9c3] p-3 rounded-lg text-[#5e3a2e] placeholder-[#5e3a2e] w-full border border-[#5e3a2e] focus:outline-none focus:ring-2 focus:ring-[#5e3a2e]"
-                    placeholder="Correo electrónico"
-                    type="email"
-                    name="correo"
-                    value="{{ usuario[6] }}"
-                    required
-                />
+{% block content %}
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show mb-6 p-4 rounded-lg shadow-md" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-            <!-- Botón de guardar cambios -->
-            <button type="submit" class="bg-[#5e3a2e] text-[#e6d9c3] px-6 py-2 rounded-lg w-full mt-4 hover:bg-[#4a2e24] transition-colors">
-                Guardar Cambios
-            </button>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <h1 class="text-3xl font-bold text-[#5e3a2e] mb-8">Editar Usuario</h1>
+
+    {# Verifica si la variable 'usuario' fue pasada a la plantilla #}
+    {% if usuario %}
+    <div class="bg-[#d1bfa3] p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
+        <form method="POST" action="{{ url_for('editar_usuario', id=usuario.idUsuario) }}" class="space-y-4">
+            {# Token CSRF #}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            {# Campos del formulario pre-rellenados con 'value' #}
+            <div>
+                <label for="nombreCompleto" class="block text-[#5e3a2e] mb-1 font-medium">Nombre Completo</label>
+                <input type="text" id="nombreCompleto" name="nombreCompleto" required
+                       value="{{ usuario.nombreCompleto | e }}"
+                       class="w-full p-3 rounded-lg border border-[#a67c6c] bg-[#e6d9c3] text-[#5e3a2e] focus:ring-2 focus:ring-[#7A3E3E] focus:border-transparent">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="apePaterno" class="block text-[#5e3a2e] mb-1 font-medium">Apellido Paterno</label>
+                    <input type="text" id="apePaterno" name="apePaterno" required
+                           value="{{ usuario.apePaterno | e }}"
+                           class="w-full p-3 rounded-lg border border-[#a67c6c] bg-[#e6d9c3] text-[#5e3a2e] focus:ring-2 focus:ring-[#7A3E3E] focus:border-transparent">
+                </div>
+                <div>
+                    <label for="apeMaterno" class="block text-[#5e3a2e] mb-1 font-medium">Apellido Materno</label>
+                    <input type="text" id="apeMaterno" name="apeMaterno" required
+                           value="{{ usuario.apeMaterno | e }}"
+                           class="w-full p-3 rounded-lg border border-[#a67c6c] bg-[#e6d9c3] text-[#5e3a2e] focus:ring-2 focus:ring-[#7A3E3E] focus:border-transparent">
+                </div>
+            </div>
+
+            <div>
+                <label for="usuario" class="block text-[#5e3a2e] mb-1 font-medium">Usuario</label>
+                <input type="text" id="usuario" name="usuario" required
+                       value="{{ usuario.usuario | e }}"
+                       class="w-full p-3 rounded-lg border border-[#a67c6c] bg-[#e6d9c3] text-[#5e3a2e] focus:ring-2 focus:ring-[#7A3E3E] focus:border-transparent">
+            </div>
+
+            <div>
+                <label for="correo" class="block text-[#5e3a2e] mb-1 font-medium">Correo Electrónico</label>
+                <input type="email" id="correo" name="correo" required
+                       value="{{ usuario.correo | e }}"
+                       class="w-full p-3 rounded-lg border border-[#a67c6c] bg-[#e6d9c3] text-[#5e3a2e] focus:ring-2 focus:ring-[#7A3E3E] focus:border-transparent">
+            </div>
+
+            <div>
+                <label for="rol" class="block text-[#5e3a2e] mb-1 font-medium">Rol</label>
+                <select id="rol" name="rol" required
+                    class="w-full p-3 rounded-lg border border-[#a67c6c] bg-[#e6d9c3] text-[#5e3a2e] focus:ring-2 focus:ring-[#7A3E3E] focus:border-transparent">
+                    {# Marca la opción actual como seleccionada #}
+                    <option value="Vendedor" {% if usuario.rol == 'Vendedor' %}selected{% endif %}>Vendedor</option>
+                    <option value="Cocinero" {% if usuario.rol == 'Cocinero' %}selected{% endif %}>Cocinero</option>
+              
+                    
+                </select>
+            </div>
+
+        
+             <p class="text-sm text-gray-600 mt-4">Nota: La contraseña no se puede cambiar desde este formulario.</p>
+
+
+            <div class="flex justify-end space-x-4 pt-4">
+                 <a href="{{ url_for('admin') }}"
+                   class="px-6 py-2 rounded-lg border border-[#7A3E3E] text-[#7A3E3E] hover:bg-gray-200 transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit"
+                    class="bg-[#5e3a2e] text-[#e6d9c3] py-2 px-6 rounded-lg hover:bg-[#7A3E3E] transition-colors font-bold shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7A3E3E]">
+                    Actualizar Usuario
+                </button>
+            </div>
+
         </form>
     </div>
+    {% else %}
+        <p class="text-center text-red-600">No se encontraron los datos del usuario para editar.</p>
+        <div class="text-center mt-4">
+             <a href="{{ url_for('admin') }}"
+               class="px-6 py-2 rounded-lg border border-[#7A3E3E] text-[#7A3E3E] hover:bg-gray-200 transition-colors">
+                Volver al Panel
+            </a>
+        </div>
+    {% endif %}
+
 </div>
 {% endblock %}

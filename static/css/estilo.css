@@ -393,3 +393,30 @@ img {
 .proveedor-card:hover .proveedor-card-header {
     background-color: #B67308 !important;
 }
+
+
+
+.buttonAg {
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    cursor: pointer;
+    font-weight: bold;
+    background-color: #FBB33E;
+
+}
+.buttonMo {
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    cursor: pointer;
+    font-weight: bold;
+    background-color: #5291D9;
+
+}
+.buttonEl {
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    cursor: pointer;
+    font-weight: bold;
+    background-color: #FB3E3E;
+
+}

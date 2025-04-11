@@ -3,7 +3,7 @@
 {% block content %}
 {% import "_macrosJuan.html" as macro %}
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/stilo.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
     <div class="container mt-5">
         <h1 class="text-center header">PROVEEDORES</h1>
 
@@ -24,7 +24,7 @@
                 
                 <!-- Columna derecha -->
                 <div class="col-md-4">
-                    <div class="mb-5"> {{ macro.input_field("text", "vendedor", "Vendedor", ["Principal", "Secundario"]) }} </div>
+                    <div class="mb-5"> {{ macro.input_field("text", "vendedor", "Tipo Vendedor", ["Principal", "Secundario"]) }} </div>
                     <div class="mb-5"> {{ macro.input_field("text", "empresa", "Empresa") }} </div>
                 </div>
 
@@ -40,7 +40,7 @@
                         {{ macro.input_field("text", producto.nombre.name, "Nombre del Producto") }}
                     </div>
                     <div class="col-md-5">
-                        {{ macro.input_field("number", producto.precio.name, "Precio", step="0.01") }}
+                        {{ macro.input_field("number", producto.precio.name, "Precio", step="0.01", min="0") }}
                     </div>
                     <div class="col-md-1 d-flex align-items-end">
                         <button type="button" class="btn btn-danger btn-remove-producto" {% if loop.first %}disabled{% endif %}>X</button>
@@ -55,7 +55,7 @@
 
             <!-- Botones -->
             <div class="text-center mt-3">
-                <button type="button" class="buttonAG" onclick="confirmarAccion('submit_agregar')">Agregar</button>
+                <button type="button" class="buttonAg" onclick="confirmarAccion('submit_agregar')">Agregar</button>
                 <button type="button" class="buttonMo" onclick="confirmarAccion('submit_modificar')">Modificar</button>
             </div>
 
@@ -72,30 +72,56 @@
     <script>
         function confirmarAccion(action) {
             Swal.fire({
-                title: "Ingrese el código de usuario",
+                title: "Verificación de usuario",
                 input: "text",
-                inputPlaceholder: "Código de usuario",
+                inputPlaceholder: "Ingrese su código de usuario",
                 showCancelButton: true,
-                confirmButtonText: "Confirmar",
+                confirmButtonText: "Verificar",
                 cancelButtonText: "Cancelar",
                 inputValidator: (value) => {
                     if (!value) {
-                        return "Debe ingresar el código de usuario";
+                        return "Debe ingresar un código de usuario";
                     }
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    document.getElementById("codigoUsuario").value = result.value;
-                    document.getElementById("actionType").value = action;
-                    
-                    // Agregar un input oculto con el nombre del botón para identificar la acción
-                    let inputAccion = document.createElement("input");
-                    inputAccion.type = "hidden";
-                    inputAccion.name = action;
-                    inputAccion.value = "1";
-                    document.getElementById("proveedorForm").appendChild(inputAccion);
-
-                    document.getElementById("proveedorForm").submit();
+                    // Verificar el código con el servidor
+                    fetch(`/verificar_codigo/${result.value}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.valido) {
+                                // Código válido - proceder con la acción
+                                document.getElementById("codigoUsuario").value = result.value;
+                                document.getElementById("actionType").value = action;
+                                
+                                let inputAccion = document.createElement("input");
+                                inputAccion.type = "hidden";
+                                inputAccion.name = action;
+                                inputAccion.value = "1";
+                                document.getElementById("proveedorForm").appendChild(inputAccion);
+        
+                                document.getElementById("proveedorForm").submit();
+                            } else {
+                                // Mostrar modal de acceso denegado
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Acceso denegado',
+                                    text: data.mensaje || 'Código inválido o sin permisos suficientes',
+                                    confirmButtonText: 'Entendido',
+                                    customClass: {
+                                        popup: 'swal2-popup-custom'
+                                    }
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Ocurrió un error al verificar el código',
+                                confirmButtonText: 'Entendido'
+                            });
+                        });
                 }
             });
         }
@@ -307,41 +333,7 @@ function agregarFormularioProducto(producto, index) {
     productosContainer.appendChild(nuevoProductoDiv);
     }
 
-    // Función para confirmar acciones (agregar/modificar/eliminar)
-    function confirmarAccion(action) {
-        Swal.fire({
-            title: "Ingrese el código de usuario",
-            input: "text",
-            inputPlaceholder: "Código de usuario",
-            showCancelButton: true,
-            confirmButtonText: "Confirmar",
-            cancelButtonText: "Cancelar",
-            inputValidator: (value) => {
-                if (!value) {
-                    return "Debe ingresar el código de usuario";
-                }
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById("codigoUsuario").value = result.value;
-                document.getElementById("actionType").value = action;
-                
-                // Validar productos antes de enviar
-                if (!validarProductos()) {
-                    return;
-                }
-                
-                // Agregar un input oculto con el nombre del botón para identificar la acción
-                let inputAccion = document.createElement("input");
-                inputAccion.type = "hidden";
-                inputAccion.name = action;
-                inputAccion.value = "1";
-                document.getElementById("proveedorForm").appendChild(inputAccion);
-
-                document.getElementById("proveedorForm").submit();
-            }
-        });
-    }
+    
 
    // Función para validar los productos antes de enviar el formulario
 function validarProductos() {
@@ -405,7 +397,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 </script>
-
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación en tiempo real
+    function setupPriceValidation(input) {
+        input.min = 0;
+        
+        input.addEventListener('input', function() {
+            if (this.value && parseFloat(this.value) < 0) {
+                this.value = Math.abs(parseFloat(this.value));
+            }
+        });
+        
+        input.addEventListener('keydown', function(e) {
+            if (['-', 'e', 'E'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    // Aplicar a campos existentes
+    document.querySelectorAll('input[type="number"][name$="precio"]').forEach(setupPriceValidation);
+    
+    // Aplicar a nuevos campos
+    document.getElementById('btn-add-producto').addEventListener('click', function() {
+        setTimeout(() => {
+            const newInput = document.querySelector('#productos-container .producto-form:last-child input[type="number"][name$="precio"]');
+            if (newInput) setupPriceValidation(newInput);
+        }, 0);
+    });
+});
+</script>
 
 {% for field, errors in form.errors.items() %}
     {% for error in errors %}

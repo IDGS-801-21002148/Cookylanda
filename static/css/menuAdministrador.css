@@ -1,0 +1,224 @@
+/* Barra de navegación */
+
+html, body {
+    height: 100%;
+    margin: 0;
+    background: url('/static/img/fondo.png') no-repeat center center fixed;
+    background-size: cover;
+    overflow-x: hidden;
+    z-index: 0;
+}
+
+@import url(//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css);
+@import url(https://fonts.googleapis.com/css?family=Titillium+Web:300);
+
+.fa-2x {
+    font-size: 2em;
+}
+
+.fa {
+    position: relative;
+    display: table-cell;
+    width: 60px;
+    height: 36px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 20px;
+}
+
+.main-menu {
+    background: url('/static/img/fondoLateral.png') no-repeat center center;
+    background-size: cover;
+    border-right: 1px solid #e5e5e5;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    left: 0;
+    width: 60px;
+    overflow: hidden;
+    -webkit-transition: width 0.3s linear;
+    transition: width 0.3s linear;
+    z-index: 1000;
+    padding-top: 10px;
+}
+
+.main-menu:hover, nav.main-menu.expanded {
+    width: 250px;
+    overflow: visible;
+}
+
+.main-menu>ul {
+    margin: 7px 0;
+    padding: 0;
+}
+
+.main-menu li {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    transition: background-color 0.2s;
+}
+
+.main-menu li:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.main-menu li>a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    color: #000000;
+    font-family: arial;
+    font-size: 16px;
+    text-decoration: none;
+    width: 100%;
+    transition: all 0.1s linear;
+}
+
+.main-menu .nav-text {
+    position: relative;
+    display: inline-block;
+    opacity: 0;
+    padding-left: 15px;
+    white-space: nowrap;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.main-menu:hover .nav-text {
+    opacity: 1;
+}
+
+.nav-icon-img {
+    width: 40px; /* Aumentado de 30px a 40px */
+    height: 40px; /* Aumentado de 30px a 40px */
+    min-width: 40px; /* Aumentado de 30px a 40px */
+    transition: transform 0.3s;
+    object-fit: contain; /* Asegura que los íconos mantengan su relación de aspecto */
+}
+
+.main-menu:hover .nav-icon-img {
+    transform: scale(1.1);
+}
+
+/* Ajustes específicos para algunos íconos que necesitan más espacio */
+.nav-icon-img.menu-icon,
+.nav-icon-img.ventas-icon {
+    width: 45px;
+    height: 45px;
+}
+
+.main-menu>ul.logout {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+}
+
+.no-touch .scrollable.hover {
+    overflow-y: hidden;
+}
+
+.no-touch .scrollable.hover:hover {
+    overflow-y: auto;
+    overflow: visible;
+}
+
+a:hover, a:focus {
+    text-decoration: none;
+}
+
+nav {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
+
+nav ul, nav li {
+    outline: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* -------------------- Botón izquierdo -------------------- */
+.btn-left {
+    position: fixed;
+    top: 25px;
+    left: 75px;
+    z-index: 5;
+}
+
+.btn-left img {
+    width: 99px;
+    height: 99px;
+    cursor: pointer;
+}
+
+/* -------------------- Botón derecho -------------------- */
+.btn-right {
+    position: fixed;
+    top: 25px;
+    right: 15px;
+    z-index: 5;
+}
+
+.btn-right img {
+    width: 115px;
+    height: 99px;
+    cursor: pointer;
+}
+
+/* Ajuste de logo centrado, grande y separado */
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 50px 0;
+}
+
+.logo-container img {
+    max-width: 500px;
+    height: auto;
+}
+
+/* Estilo personalizado para centrar la tabla */
+.table {
+    width: 80%;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 15px;
+    overflow: hidden;
+    border-collapse: collapse;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilo para la cabecera */
+.table thead th {
+    background-color: #B1847A;
+    color: white;
+    padding: 12px;
+    text-align: center;
+    font-size: 18px;
+}
+
+/* Estilo para las celdas del cuerpo */
+.table tbody td {
+    background-color: #E3CFC2;
+    padding: 12px;
+    font-size: 16px;
+    text-align: center;
+    border: 1px solid white;
+}
+
+/* Bordes y tamaño uniforme */
+.table th, .table td {
+    border: 1px solid #B1847A;
+}
+
+/* Opcional: efecto hover */
+.table tbody tr:hover {
+    background-color: #d4b6aa;
+}

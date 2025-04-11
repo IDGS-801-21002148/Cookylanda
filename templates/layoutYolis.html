@@ -4,12 +4,14 @@
         <title>vendedor</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Manteniendo el enlace original por si no usas url_for aquí -->
         <link rel="icon" href="../static/img/Logo (2).png" type="image/png">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5Wa9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">  
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">      
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+        <!-- Se elimina el link duplicado de Bootstrap CSS -->
         <link href="https://unpkg.com/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+        <!-- Manteniendo el enlace original por si no usas url_for aquí -->
         <link href="../static/css/landaBase.css" rel="stylesheet" type="text/css"/>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
@@ -20,53 +22,74 @@
         <nav class="main-menu">
             <ul>
                 <li>
-                    <a href="homeVendedor">
+                    <!-- Manteniendo la estructura original del enlace -->
+                    <a href="vendedor">
                         <img src="../static/img/casa.png" alt="Menu" class="nav-icon-img menu-icon">
                         <span class="nav-text">Menu</span>
                     </a>
                 </li>
                 <li class="has-subnav">
+                    <!-- Manteniendo la estructura original del enlace -->
                     <a href="menu">
                         <img src="../static/img/Ventas.png" alt="Ventas" class="nav-icon-img ventas-icon">
                         <span class="nav-text">Ventas</span>
                     </a>
                 </li>
                 <li>
+                    <!-- Manteniendo la estructura original del enlace -->
                     <a href="pedidoVentas">
                         <img src="../static/img/compras.png" alt="Compras" class="nav-icon-img compras-icon">
                         <span class="nav-text">Pedidos</span>
                     </a>
                 </li>
+               
                 <li>
-                    <a href="dashboard">
-                        <img src="../static/img/grafico.png" alt="dashboard" class="nav-icon-img dashboard-icon">
-                        <span class="nav-text">Dashboard</span>
-                    </a>
-                </li>           
-                <li>
-                    <a href="Compras.html">
+                    <!-- Manteniendo la estructura original del enlace -->
+                    <a href="logout">
                         <img src="../static/img/cerrar sesion.png" alt="Cerrar Sesión" class="nav-icon-img cerrar-sesion-icon">
                         <span class="nav-text">Cerrar Sesión</span>
                     </a>
                 </li>
+
+                <!-- === BOTÓN ADMIN MODIFICADO === -->
+                {# --- Sección Solo Administrador --- #}
+                {# Se asume que estás usando Flask/Jinja2 por la sintaxis get_flashed_messages y el ejemplo proporcionado #}
+                {% if current_user.is_authenticated and current_user.rol == 'Administrador' %}
+                <li>
+                    {# Enlace al panel de admin usuarios, usando url_for como en el ejemplo #}
+                    <a href="{{ url_for('admin') }}">
+                        {# Usando url_for para la imagen como en el ejemplo #}
+                        <img src="{{ url_for('static', filename='img/persona1.webp') }}" alt="Adm Usuarios" class="nav-icon-img crear-usuario-icon">
+                        <span class="nav-text">Adm Usuarios</span> {# Texto más descriptivo del ejemplo #}
+                    </a>
+                    {# Aquí podrías añadir los otros enlaces de Admin (Proveedores, Compras) si los necesitas #}
+                    {# Ejemplo:
+                     <a href="{{ url_for('registroProveedores') }}">...</a>
+                     <a href="{{ url_for('registroCompra') }}">...</a>
+                    #}
+                </li>
+                {% endif %}
+                {# --- Fin Sección Solo Administrador --- #}
+                <!-- === FIN BOTÓN ADMIN MODIFICADO === -->
+
             </ul>
         </nav>
 
         <!-- Termina la navbar -->
 
         <div class="container mt-4">
-            <!-- Manejo de mensajes flash -->
+            <!-- Manejo de mensajes flash (Se mantiene como estaba en el original) -->
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
                     {% for message in messages %}
-                        <div class="alert alert-success">
+                        <div class="alert alert-success"> {# Podrías mejorar esto para usar categorías como en el ejemplo 2 si quieres #}
                             {{ message }}
                         </div>
                     {% endfor %}
                 {% endif %}
             {% endwith %}
 
-            <!-- Contenido dinámico de la página -->
+            <!-- Contenido dinámico de la página (Se mantiene como estaba) -->
             <div class="container-fluid p-0">
                 {% block container %}
                 {% endblock %}
@@ -74,9 +97,10 @@
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+        <!-- Se mantiene solo un script de Bootstrap bundle -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+        <!-- Se elimina el script duplicado de Bootstrap bundle -->
     </body>
 </html>

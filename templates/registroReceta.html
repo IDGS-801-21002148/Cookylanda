@@ -41,6 +41,10 @@
           <div class="col-6">
             {{ input_field(form.nombreGalleta) }}
           </div>
+          
+          <div class="col-6">
+            {{ input_field(form.precioUnitario) }}
+          </div>
 
             <div class="col-6">
               {{ select_field(form.estatus) }}
@@ -265,8 +269,8 @@
 <div id="codigoUsuarioModal" class="modal">
   <div class="modal-content">
     <p>Ingresa tu código de empleado:</p>
-    <form method="POST" action="{{ url_for('verificar_usuario') }}">
-      {{ form.hidden_tag() }}  <!-- Esto genera el campo csrf_token automáticamente -->
+    <form method="POST" action="{{ url_for('verificar_usuario') }}" id="codigoForm">
+      {{ form.hidden_tag() }}
       <input type="text" name="codigoUsuario" id="codigoUsuarioInput" placeholder="Código de Empleado" required>
       <button type="submit">Verificar</button>
     </form>
@@ -280,23 +284,30 @@
 
 
 
-
-
-
-
-
-
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-  // Cuando se hace clic en "Agregar"
-  document.getElementById('btnAgregar').addEventListener('click', () => {
+ // Cuando se hace clic en "Agregar"
+document.getElementById('btnAgregar').addEventListener('click', () => {
+  const codigoGuardado = localStorage.getItem('codigoUsuarioVerificado');
+  if (codigoGuardado) {
+    // Si ya hay un código verificado, asignarlo y mostrar el formulario directamente
+    const codigoUsuarioField = document.querySelector('input[name="codigoUsuario"]');
+    if (codigoUsuarioField) {
+      codigoUsuarioField.value = codigoGuardado;
+      codigoUsuarioField.readOnly = true;
+    }
+    document.getElementById('formulario').style.display = 'block';
+    document.getElementById('tabla').style.display = 'none';
+  } else {
+    // Si no hay código verificado, mostrar el modal
     const modal = document.getElementById('codigoUsuarioModal');
     modal.style.display = 'block';
-  });
+  }
+});
 
   // Cierra el formulario al hacer clic en el botón "Cerrar"
   document.getElementById('btnCerrar').addEventListener('click', () => {
@@ -305,12 +316,22 @@
   });
 
 
-
-
   document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('codigoUsuarioModal');
+    const codigoForm = document.getElementById('codigoForm');
     const mensajeExito = "{{ 'Empleado verificado correctamente' in get_flashed_messages(with_categories=false) }}";
-
+    const codigoVerificado = "{{ request.form.get('codigoUsuario', '') }}";
+  
+    // Si hay un código verificado, asignarlo al campo del formulario
+    if (codigoVerificado && codigoVerificado !== '') {
+      const codigoUsuarioField = document.querySelector('input[name="codigoUsuario"]');
+      if (codigoUsuarioField) {
+        codigoUsuarioField.value = codigoVerificado;
+        // Opcional: hacer el campo de solo lectura
+        codigoUsuarioField.readOnly = true;
+      }
+    }
+  
     // Muestra el formulario si el mensaje de éxito existe
     if (mensajeExito === 'True') {
       modal.style.display = 'none';
@@ -321,16 +342,26 @@
       modal.style.display = 'block';
     }
   });
-
-
-
-
-
-  // Verifica si hubo un error al ingresar el código
-  const mensajeError = "{{ 'Error: No puedes registrar una receta.' in get_flashed_messages(with_categories=false) }}";
-  if (mensajeError === 'True') {
-    alert('Código de usuario inválido. Intenta nuevamente.');
-  }
+  
+  // Modifica el evento submit del formulario para guardar el código en localStorage
+  document.getElementById('codigoForm').addEventListener('submit', function() {
+    const codigoInput = document.getElementById('codigoUsuarioInput');
+    if (codigoInput && codigoInput.value) {
+      localStorage.setItem('codigoUsuarioVerificado', codigoInput.value);
+    }
+  });
+  
+  // Al cargar la página, verifica si hay un código guardado
+  window.addEventListener('load', function() {
+    const codigoGuardado = localStorage.getItem('codigoUsuarioVerificado');
+    if (codigoGuardado) {
+      const codigoUsuarioField = document.querySelector('input[name="codigoUsuario"]');
+      if (codigoUsuarioField) {
+        codigoUsuarioField.value = codigoGuardado;
+        codigoUsuarioField.readOnly = true;
+      }
+    }
+  });
 
 
 

@@ -60,12 +60,11 @@
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
                         <div class="mb-3">
-                            <label for="usuario_id" class="form-label">Pedido a nombre de:</label>
-                            <select class="form-control" name="usuario_id" id="usuario_id" required>
-                                <option value="">Selecciona un usuario</option> {% for usuario in usuarios %}
-                                    <option value="{{ usuario.idUsuario }}">{{ usuario.nombreCompleto }}</option>
-                                {% endfor %}
-                            </select>
+                            <label class="form-label">Pedido a nombre de:</label>
+                            <input type="text" class="form-control" 
+                                    value="{{ usuario_actual.nombreCompleto if usuario_actual else 'Usuario no disponible' }}" 
+                                    readonly>
+                            <input type="hidden" name="usuario_id" value="{{ usuario_actual.idUsuario if usuario_actual }}">
                         </div>
                         
                         <div class="mb-3">

@@ -8,7 +8,7 @@ solo_letras = Regexp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$', message="Solo se 
 caracteres_permitidos = Regexp(r'^[a-zA-Z0-9.,\s]+$', message="Solo se permiten números, letras, puntos y comas")
 
 class RecetaForm(FlaskForm):
-   
+
 
     nombreGalleta = StringField('Nombre de la Galleta', validators=[
         DataRequired(), 
@@ -16,8 +16,12 @@ class RecetaForm(FlaskForm):
         Length(max=255)
         ])
 
+    precioUnitario = StringField('Precio Unitario', validators=[
+        DataRequired(),
+        Regexp(r'^[0-9]+(\.[0-9]{1,2})?$', message="Debe ser un número con hasta 2 decimales")
+    ])
 
-     # Campo de Harina
+    # Campo de Harina
     cmbHarina = SelectField('Ingrediente 1', choices=[('Harina', 'Harina')], validators=[
         DataRequired(),
         solo_letras])
@@ -163,7 +167,7 @@ class RecetaForm(FlaskForm):
         Length(max=150)
         ])
 
-    unidad = SelectField('Unidades:', choices=[('Gramos', 'Gramos'), ('Mililitros', 'Mililitros'), ('Litros', 'Litros'), ('Kilos', 'Kilos')], validators=[
+    unidad = SelectField('Unidades:', choices=[('Gramos', 'Gramos'), ('Mililitros', 'Mililitros'), ('Litros', 'Litros'), ('Kilos', 'Kilos'), ('Unidades', 'Unidades')], validators=[
         DataRequired(),
         solo_letras, 
         Length(max=255)
@@ -178,7 +182,16 @@ class RecetaForm(FlaskForm):
     # SelectFields para el Estatus
     estatus = SelectField('Estatus', choices=[('Activo', 'Activo'), ('Inactivo', 'Inactivo')], validators=[DataRequired()])
 
+
+
+    
+
     # Campo para el codigo de usuario
-    codigoUsuario = StringField('Código de Usuario', validators=[DataRequired(), Length(max=255)])
+    codigoUsuario = StringField('Código de Usuario', render_kw={'readonly': True}, validators=[DataRequired(), Length(max=255)])
+
+
+
+    
+
 
     #imagen = FileField('Imagen')

@@ -1,54 +1,178 @@
-{% extends 'base.html' %}
+{% extends "layoutAdministrador.html" %} {# Usa el nombre exacto de tu archivo layout #}
 
-{% block title %}Admin{% endblock %}
+{% block title %}Panel de Administración{% endblock %}
 
-{% block customCSS %}
-<style>
-    body {
-        background-image: url("{{ url_for('static', filename='img/fondo.png') }}");
-        background-size: cover; 
-        background-position: center; 
-        background-repeat: no-repeat; 
-        margin: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        font-family: 'Roboto', sans-serif;
-    }
-</style>
-{% endblock %}
+{# Coloca todo el contenido dentro del bloque 'content' definido en el layout #}
+{% block content %}
+{# No incluyas etiquetas <html>, <head>, o <body> aquí, ya vienen del layout #}
 
-{% block body %}
-<div class="relative w-full h-full flex items-center justify-center">
-    <!-- Div izquierdo con un ancho reducido -->
-    <div class="absolute top-0 left-0 w-16 h-full bg-gray-200 opacity-50">
-        <!-- Contenido opcional -->
-    </div>
+{# Contenedor principal para el contenido específico de esta página #}
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-    <!-- Div derecho con un ancho reducido -->
-    <div class="absolute top-0 right-0 w-16 h-full bg-gray-200 opacity-50">
-        <!-- Contenido opcional -->
-    </div>
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {# Usamos clases de Bootstrap/Tailwind para las alertas #}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show mb-6 p-4 rounded-lg shadow-md" role="alert">
+                     {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-    <div class="text-center z-10">
-        <h1 class="text-5xl font-bold text-[#7A3E3E]">
-            BIENVENIDO
-        </h1>
-        <p class="text-3xl font-semibold text-[#7A3E3E] mt-2">
-            {{ current_user.rol }} 
-        </p>
-
-        {% if current_user.rol == 'Administrador' %}
-        <a href="{{ url_for('ad') }}" class="text-lg text-[#7A3E3E] mt-4 hover:underline">
-            Ver Usuarios
-        </a>
+    <!-- Encabezado del Panel -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+        <h1 class="text-3xl font-bold text-[#5e3a2e] mb-4 sm:mb-0">Panel de Administración</h1>
+        {% if current_user.is_authenticated %}
+        <span class="bg-[#5e3a2e] text-white px-4 py-2 rounded-lg shadow">Usuario: {{ current_user.usuario }}</span>
         {% endif %}
     </div>
 
-    <!-- Ícono de carrito en la esquina superior derecha -->
-    <div class="absolute top-4 right-4">
-        <i class="fas fa-shopping-basket text-4xl text-[#7A3E3E]"></i>
-    </div>
-</div>
+    <!-- Grid para Formulario y Tabla -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <!-- Formulario de Creación -->
+        <div class="bg-[#d1bfa3] p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold text-[#5e3a2e] mb-4 border-b border-[#a67c6c] pb-2">Crear Nuevo Usuario</h2>
+             <!-- La acción apunta al endpoint 'admin', que maneja GET y POST -->
+            <form method="POST" action="{{ url_for('admin') }}" class="space-y-4">
+                {# ESTA LÍNEA ES CRUCIAL PARA CSRF #}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div>
+                    <label for="nombreCompleto" class="block text-[#5e3a2e] mb-1 font-medium">Nombre Completo</label>
+                    <input type="text" id="nombreCompleto" name="nombreCompleto" required
+                        class="w-full p-3 rounded-lg border border-[#a67c6c] bg-[#e6d9c3] text-[#5e3a2e] focus:ring-2 focus:ring-[#7A3E3E] focus:border-transparent">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="apePaterno" class="block text-[#5e3a2e] mb-1 font-medium">Apellido Paterno</label>
+                        <input type="text" id="apePaterno" name="apePaterno" required
+                            class="w-full p-3 rounded-lg border border-[#a67c6c] bg-[#e6d9c3] text-[#5e3a2e] focus:ring-2 focus:ring-[#7A3E3E] focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="apeMaterno" class="block text-[#5e3a2e] mb-1 font-medium">Apellido Materno</label>
+                        <input type="text" id="apeMaterno" name="apeMaterno" required
+                            class="w-full p-3 rounded-lg border border-[#a67c6c] bg-[#e6d9c3] text-[#5e3a2e] focus:ring-2 focus:ring-[#7A3E3E] focus:border-transparent">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="usuario" class="block text-[#5e3a2e] mb-1 font-medium">Usuario</label>
+                    <input type="text" id="usuario" name="usuario" required
+                        class="w-full p-3 rounded-lg border border-[#a67c6c] bg-[#e6d9c3] text-[#5e3a2e] focus:ring-2 focus:ring-[#7A3E3E] focus:border-transparent">
+                </div>
+
+                <div>
+                    <label for="contrasenia" class="block text-[#5e3a2e] mb-1 font-medium">Contraseña</label>
+                    <input type="password" id="contrasenia" name="contrasenia" required
+                        class="w-full p-3 rounded-lg border border-[#a67c6c] bg-[#e6d9c3] text-[#5e3a2e] focus:ring-2 focus:ring-[#7A3E3E] focus:border-transparent">
+                </div>
+
+                <div>
+                    <label for="correo" class="block text-[#5e3a2e] mb-1 font-medium">Correo Electrónico</label>
+                    <input type="email" id="correo" name="correo" required
+                        class="w-full p-3 rounded-lg border border-[#a67c6c] bg-[#e6d9c3] text-[#5e3a2e] focus:ring-2 focus:ring-[#7A3E3E] focus:border-transparent">
+                </div>
+
+                <div>
+                    <label for="rol" class="block text-[#5e3a2e] mb-1 font-medium">Rol</label>
+                    <select id="rol" name="rol" required
+                        class="w-full p-3 rounded-lg border border-[#a67c6c] bg-[#e6d9c3] text-[#5e3a2e] focus:ring-2 focus:ring-[#7A3E3E] focus:border-transparent">
+                        <option value="" disabled selected>Selecciona un rol</option> {# Opción por defecto #}
+                        <option value="Vendedor">Vendedor</option>
+                        <option value="Cocinero">Cocinero</option>
+                        
+                       
+                    </select>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-[#5e3a2e] text-[#e6d9c3] py-3 px-6 rounded-lg hover:bg-[#7A3E3E] transition-colors font-bold shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7A3E3E]">
+                    Crear Usuario
+                </button>
+            </form>
+        </div> <!-- Fin Formulario -->
+
+        <!-- Tabla de Usuarios -->
+        <div class="bg-[#e6d9c3] p-6 rounded-lg shadow-lg overflow-x-auto">
+            <h2 class="text-xl font-semibold text-[#5e3a2e] mb-4 border-b border-[#a67c6c] pb-2">Lista de Usuarios</h2>
+
+            <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                <table class="w-full text-sm text-left text-[#5e3a2e]">
+                    <thead class="text-xs text-[#e6d9c3] uppercase bg-[#a67c6c]">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">Nombre</th>
+                            <th scope="col" class="px-6 py-3">Usuario</th>
+                            <th scope="col" class="px-6 py-3">Correo</th>
+                            <th scope="col" class="px-6 py-3">Rol</th>
+                            <th scope="col" class="px-6 py-3">Código</th>
+                            <th scope="col" class="px-6 py-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {# Asume que la variable 'usuarios' se pasa desde la ruta Flask #}
+                        {% for usuario_item in usuarios %}
+                        <tr class="bg-[#e6d9c3] border-b border-[#a67c6c] hover:bg-[#d1bfa3]">
+                            <td class="px-6 py-4 font-medium whitespace-nowrap">{{ usuario_item.nombreCompleto }} {{ usuario_item.apePaterno }} {{ usuario_item.apeMaterno }}</td>
+                            <td class="px-6 py-4">{{ usuario_item.usuario }}</td>
+                            <td class="px-6 py-4">{{ usuario_item.correo }}</td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold
+                                    {% if usuario_item.rol == 'Administrador' %}bg-red-200 text-red-800
+                                    {% elif usuario_item.rol == 'Vendedor' %}bg-blue-200 text-blue-800
+                                    {% elif usuario_item.rol == 'Cocinero' %}bg-yellow-200 text-yellow-800
+                        
+                                    {% else %}bg-gray-200 text-gray-800{% endif %}">
+                                    {{ usuario_item.rol }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">{{ usuario_item.codigoUsuario }}</td>
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                                    <!-- Enlace para Editar -->
+                                    <a href="{{ url_for('editar_usuario', id=usuario_item.idUsuario) }}"
+                                       class="inline-flex items-center justify-center px-3 py-1 bg-yellow-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-600 active:bg-yellow-700 focus:outline-none focus:border-yellow-700 focus:ring focus:ring-yellow-300 disabled:opacity-25 transition ease-in-out duration-150">
+                                        Editar
+                                    </a>
+                                    <!-- Formulario para Eliminar -->
+                                    {# Prevenir que el admin actual se elimine a sí mismo #}
+                                    {% if current_user.id != usuario_item.idUsuario %}
+                                    <form action="{{ url_for('eliminar_usuario', id=usuario_item.idUsuario) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer.');">
+                                        {# ESTA LÍNEA ES CRUCIAL PARA CSRF #}
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit"
+                                            class="inline-flex items-center justify-center w-full sm:w-auto px-3 py-1 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-800 focus:outline-none focus:border-red-800 focus:ring focus:ring-red-300 disabled:opacity-25 transition ease-in-out duration-150">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr class="bg-[#e6d9c3]">
+                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">No hay usuarios registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div> <!-- Fin de div relative -->
+        </div> <!-- Fin de div tabla -->
+
+    </div> <!-- Fin de div grid -->
+</div> <!-- Fin de div container -->
+{% endblock %}
+
+
+{% block scripts %}
+    {# {{ super() }} Si el layout tiene un bloque scripts con contenido que quieres mantener #}
+    <script>
+        console.log("Panel de administración cargado.");
+        // Puedes añadir JS específico para esta página aquí, por ejemplo,
+        // validaciones adicionales de formulario si es necesario.
+    </script>
 {% endblock %}
